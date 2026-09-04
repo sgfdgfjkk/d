@@ -1617,6 +1617,24 @@ function addLoot(i, it) {
   list.prepend(card);
 }
 
+// shows what a player just pulled — item, drop odds, and its coin value —
+// right under their profile card in the battle bar
+function updateLastPull(i, it) {
+  const el = document.getElementById('lastpull' + i);
+  if (!el || !it || it.token) return;
+  const visual = it.img
+    ? `<img class="it-img" src="${it.img}" alt="">`
+    : `<svg class="it-glyph" viewBox="0 0 24 24"><use href="#${it.g}"/></svg>`;
+  el.innerHTML = (it.pct ? `<span class="bv-pull-pct">${it.pct}</span>` : '') +
+    visual +
+    `<span class="bv-pull-name">${it.name}</span>` +
+    `<span class="bv-pull-val"><svg viewBox="0 0 24 24" width="10" height="10"><use href="#coin"/></svg>${fmt(it.v)}</span>`;
+  el.classList.add('show');
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
 function waitBarHtml(b) {
   const players = [];
   b.teams.forEach((team) => team.forEach((p) => players.push(p)));
@@ -1627,14 +1645,19 @@ function waitBarHtml(b) {
   const canCall = isOwner(b);
   return players.map((p, i) => p ? `
     <div class="bv-pbar-card ${p.you ? 'you' : ''}" id="pbcard${i}">
-      <span class="lvl">${botLvl(p.n)}</span>
-      <span class="avatar">${avatarSVG(p.k)}</span>
-      <b class="bv-uname">${p.you ? 'You' : p.n}</b>
-      <span class="bv-won"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg><em id="tot${i}">0.00</em>${b.type === 'jackpot' ? `<b class="bv-jp-pct" id="jp${i}">${pctStr(100 / N)}</b>` : ''}</span>
+      <div class="bv-pbar-top">
+        <span class="lvl">${botLvl(p.n)}</span>
+        <span class="avatar">${avatarSVG(p.k)}</span>
+        <b class="bv-uname">${p.you ? 'You' : p.n}</b>
+        <span class="bv-won"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg><em id="tot${i}">0.00</em>${b.type === 'jackpot' ? `<b class="bv-jp-pct" id="jp${i}">${pctStr(100 / N)}</b>` : ''}</span>
+      </div>
+      <div class="bv-pull" id="lastpull${i}"></div>
     </div>` : `
     <div class="bv-pbar-card empty${canCall ? ' callable' : ''}" id="pbcard${i}"${canCall ? ` data-bot="${b.id}" role="button" tabindex="0" title="Call a bot into this slot"` : ''}>
-      <span class="avatar bot-avatar"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#bot"/></svg></span>
-      <b class="bv-uname">${canCall ? 'Call Bot' : 'Waiting for player…'}</b>
+      <div class="bv-pbar-top">
+        <span class="avatar bot-avatar"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#bot"/></svg></span>
+        <b class="bv-uname">${canCall ? 'Call Bot' : 'Waiting for player…'}</b>
+      </div>
     </div>`).join('');
 }
 
@@ -2098,6 +2121,7 @@ function renderLive(b) {
         totals[i] += it.v; bags[i].push(it);
         var t = document.getElementById('tot' + i); if (t) t.textContent = fmt(totals[i]);
         updateJackpotPcts();
+        if (!it.token) updateLastPull(i, it);
         if (it.token) {
           pending++;
           var strip = document.getElementById('pstrip' + i);
@@ -2148,6 +2172,7 @@ function renderLive(b) {
       bags[i][bags[i].length - 1] = prize;
       var t = document.getElementById('tot' + i); if (t) t.textContent = fmt(totals[i]);
       updateJackpotPcts();
+      updateLastPull(i, prize);
       col.classList.add('gold-hit');
       AudioFX.gold();
       spawnConfetti();

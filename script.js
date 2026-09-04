@@ -317,8 +317,10 @@ async function refreshBattles() {
   renderHomeHighlights();
   if (viewerB) {
     const stillThere = battles.find((x) => x.id === viewerB.id);
-    if (stillThere && !stillThere.done && !stillThere._counting && !stillThere.played && isFull(stillThere)) {
-      startBattleCountdown(stillThere);
+    if (stillThere && !stillThere.done && !stillThere.played && !stillThere._counting && isFull(stillThere)) {
+      // battle just filled up — re-render so the countdown + round kicks off,
+      // in sync with whatever the player who just joined sees
+      renderLive(stillThere);
     } else if (stillThere && !stillThere.played) {
       refreshWaitingView();
     }
@@ -360,7 +362,7 @@ function renderBattles() {
     const mine = battleHasUser(b);
     let action;
     if (full) action = `<button class="btn btn-view" data-view="${b.id}">Watch Battle</button>`;
-    else if (mine) action = `<button class="btn-call" data-leave="${b.id}">Leave &amp; Refund</button>`;
+    else if (mine) action = `<button class="btn btn-primary" data-bot="${b.id}">Call Bot</button><button class="btn-call" data-leave="${b.id}">Leave &amp; Refund</button>`;
     else action = `<button class="btn btn-primary" data-join="${b.id}">Join Battle</button>`;
     return `
       <div class="battle-row">
@@ -427,7 +429,9 @@ async function joinBattle(id) {
     const idx = battles.findIndex((x) => x.id === id);
     if (idx > -1) battles[idx] = hydrated; else battles.unshift(hydrated);
     toast(`Joined ${MODES[b.mode].label} battle for ${fmt(cost)} coins!`);
-    if (isFull(hydrated)) setTimeout(() => openBattleViewer(hydrated), 700);
+    // always open the same live view everyone else uses — renderLive handles
+    // the waiting screen / countdown itself, so no one skips ahead of anyone else
+    openBattleViewer(hydrated);
     renderBattlesIfVisible();
   } catch (e) {
     addBalance(cost);
@@ -541,31 +545,32 @@ async function createBattle() {
   }
 }
 
-function startBattleCountdown(b) {
-  if (b._counting) return;
-  b._counting = true;
-  const countEl = document.getElementById('bvCount');
-  const chip = document.getElementById('bvRound');
-  if (chip) chip.textContent = 'Get Ready';
-  clearCountTimers();
-  let n = 3;
-  const tick = () => {
-    if (!battles.includes(b) || !isFull(b)) { if (countEl) countEl.hidden = true; return; }
-    if (countEl) { countEl.hidden = false; countEl.textContent = n; countEl.classList.remove('pop'); void countEl.offsetWidth; countEl.classList.add('pop'); }
-    AudioFX.tick();
-    n--;
-    if (n > 0) {
-      countTimers.push(setTimeout(tick, 900));
-    } else {
-      countTimers.push(setTimeout(function () {
-        if (countEl) countEl.hidden = true;
-        b.played = false; // let renderLive take over now that everyone is in
-        b._counting = false;
-        renderRoute();
-      }, 800));
-    }
-  };
-  tick();
+/* ---------- call bot (fills an empty slot so a battle doesn't sit forever) ---------- */
+function pickBotName(b) {
+  const used = new Set(b.teams.flat().filter(Boolean).map((p) => p.n || p));
+  const free = BOTS.map((x) => x.n).filter((n) => !used.has(n));
+  if (free.length) return free[Math.floor(Math.random() * free.length)];
+  // ran out of the preset bot roster — make up a fresh one
+  let n;
+  do { n = 'bot_' + Math.random().toString(36).slice(2, 6); } while (used.has(n));
+  return n;
+}
+
+async function callBot(id) {
+  const b = battles.find((x) => x.id === id);
+  if (!b || isFull(b)) return;
+  const botName = pickBotName(b);
+  try {
+    const sb = await Api.joinBattle(id, botName);
+    const hydrated = hydrateBattle(sb);
+    const idx = battles.findIndex((x) => x.id === id);
+    if (idx > -1) battles[idx] = hydrated; else battles.unshift(hydrated);
+    if (viewerB && viewerB.id === id) { viewerB = hydrated; renderLive(hydrated); }
+    renderBattlesIfVisible();
+    systemMsg(`${botName} joined the battle.`);
+  } catch (e) {
+    toast('Could not call a bot right now — try again.');
+  }
 }
 
 async function leaveBattle(id) {
@@ -946,6 +951,8 @@ async function initPage() {
     if (join) return joinBattle(Number(join.dataset.join));
     const leave = e.target.closest('[data-leave]');
     if (leave) return leaveBattle(Number(leave.dataset.leave));
+    const bot = e.target.closest('[data-bot]');
+    if (bot) return callBot(Number(bot.dataset.bot));
     const view = e.target.closest('[data-view]');
     if (view) {
       const b = battles.find((x) => x.id === Number(view.dataset.view));
@@ -1288,6 +1295,13 @@ async function initPage() {
   window.__steps.push('wiring-done');
   // battle viewer header
   $('#bvBack').addEventListener('click', () => { location.hash = '#/case-battles'; });
+  const waitActionsHost = document.getElementById('bvWaitActions');
+  if (waitActionsHost) {
+    waitActionsHost.addEventListener('click', (e) => {
+      const bot = e.target.closest('[data-bot]');
+      if (bot) callBot(Number(bot.dataset.bot));
+    });
+  }
   $('#bvSound').addEventListener('click', () => {
     AudioFX.on = !AudioFX.on;
     localStorage.setItem('rbxwin_sound', AudioFX.on ? 'on' : 'off');
@@ -1623,7 +1637,6 @@ function refreshWaitingView() {
 
 function renderLive(b) {
   clearLiveTimers();
-  b.played = true;
   const m = MODES[b.mode];
   const players = [];
   const teamOf = [];
@@ -1642,8 +1655,6 @@ function renderLive(b) {
   $('#bvSeed').textContent = 'Seed ' + b.seed;
   $('#bvCasesRow').innerHTML = b.cases.map((k) => `
     <span class="bv-case-thumb">${caseArt(k, cKeys)}</span>`).join('');
-  $('#bvRound').textContent = `Round 1 of ${nR}`;
-  $('#bvRound').classList.remove('goldtxt');
   $('#bvSound').textContent = AudioFX.on ? 'Sound On' : 'Sound Off';
   $('#bvBalance').textContent = currentUser ? fmt(currentUser.balance) : '0.00';
   const pot0 = document.getElementById('bvPot');
@@ -1657,14 +1668,55 @@ function renderLive(b) {
   $('#bvPlayerbar').style.gridTemplateColumns = `repeat(${N},minmax(0,1fr))`;
   const emptySlots = players.filter((p) => !p).length;
   $('#bvPlayerbar').innerHTML = waitBarHtml(b);
-  $('#bvRound').textContent = emptySlots > 0 ? 'Waiting for players' : `Round 1 of ${nR}`;
   const countEl = document.getElementById('bvCount');
+  const waitActions = document.getElementById('bvWaitActions');
+
   if (emptySlots > 0) {
+    // still missing players — b.played stays false so polling (and the joiner's
+    // own screen) both know to re-render once the last slot fills
+    $('#bvRound').textContent = 'Waiting for players';
+    $('#bvRound').classList.remove('goldtxt');
     $('#bvStage').classList.add('stage-wait');
     if (countEl) countEl.hidden = true;
+    if (waitActions) {
+      const canCallBot = battleHasUser(b);
+      waitActions.hidden = !canCallBot;
+      if (canCallBot) waitActions.innerHTML = `<button class="btn btn-primary" id="bvCallBot" data-bot="${b.id}">Call Bot</button>`;
+    }
     return; // reels wait until all slots are filled
   }
+
+  if (waitActions) { waitActions.hidden = true; waitActions.innerHTML = ''; }
+  $('#bvStage').classList.remove('stage-wait');
+
+  // battle is full — if we've already started (or are mid-countdown) for THIS
+  // fill, don't restart; otherwise run the 3-2-1 countdown once, then begin.
+  if (b.played || b._counting) return;
+  b._counting = true;
+  $('#bvRound').textContent = `Round 1 of ${nR}`;
+  $('#bvRound').classList.remove('goldtxt');
   if (countEl) countEl.hidden = true;
+
+  let n = 3;
+  const countdownTick = () => {
+    if (viewerB !== b || b.done) { b._counting = false; if (countEl) countEl.hidden = true; return; }
+    if (countEl) { countEl.hidden = false; countEl.textContent = n; countEl.classList.remove('pop'); void countEl.offsetWidth; countEl.classList.add('pop'); }
+    AudioFX.tick();
+    n--;
+    if (n > 0) {
+      liveTimers.push(setTimeout(countdownTick, 900));
+    } else {
+      liveTimers.push(setTimeout(() => {
+        if (countEl) countEl.hidden = true;
+        b._counting = false;
+        b.played = true;
+        beginRound();
+      }, 800));
+    }
+  };
+  countdownTick();
+
+  function beginRound() {
   $('#bvWinner').hidden = true;
   $('#bvWinner').innerHTML = '';
   $('#bvStage').classList.remove('gold-round', 'stage-done', 'stage-wait');
@@ -2100,7 +2152,8 @@ function renderLive(b) {
     strip.style.transform = 'translateY(0px)';
   });
   liveTimers.push(setTimeout(playRound, 1200));
-};
+  } // end beginRound
+}
 
 async function recreateBattle(b) {
   if (!currentUser) { openAuth('signin'); return; }

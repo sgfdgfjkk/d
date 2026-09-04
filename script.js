@@ -281,6 +281,9 @@ const battleFilled = (b) => b.teams.flat().filter(Boolean).length;
 const battlePot   = (b) => battleCost(b) * battleSlots(b);
 const isFull      = (b) => battleFilled(b) >= battleSlots(b);
 const battleHasUser = (b) => b.teams.flat().some((p) => p && p.you);
+// the battle owner is whoever created it — always the first slot of team 0
+const battleOwner = (b) => (b.teams[0] && b.teams[0][0]) || null;
+const isOwner = (b) => { const o = battleOwner(b); return !!(o && currentUser && o.n === currentUser.name); };
 
 function hydrateBattle(sb) {
   return {
@@ -362,7 +365,7 @@ function renderBattles() {
     const mine = battleHasUser(b);
     let action;
     if (full) action = `<button class="btn btn-view" data-view="${b.id}">Watch Battle</button>`;
-    else if (mine) action = `<button class="btn btn-primary" data-bot="${b.id}">Call Bot</button><button class="btn-call" data-leave="${b.id}">Leave &amp; Refund</button>`;
+    else if (mine) action = `${isOwner(b) ? `<button class="btn btn-primary" data-bot="${b.id}">Call Bot</button>` : ''}<button class="btn-call" data-leave="${b.id}">Leave &amp; Refund</button>`;
     else action = `<button class="btn btn-primary" data-join="${b.id}">Join Battle</button>`;
     return `
       <div class="battle-row">
@@ -429,11 +432,8 @@ async function joinBattle(id) {
     const idx = battles.findIndex((x) => x.id === id);
     if (idx > -1) battles[idx] = hydrated; else battles.unshift(hydrated);
     toast(`Joined ${MODES[b.mode].label} battle for ${fmt(cost)} coins!`);
-    // don't auto-jump into the viewer from the menu — that skipped the
-    // "Watch Battle" step and left the list/viewer state out of sync.
-    // Stay on the battle list; the row now shows Call Bot/Leave (or Watch
-    // Battle once it's full) so the player enters on their own click.
-    renderBattlesIfVisible();
+    // jump straight into the battle viewer instead of leaving them on the list
+    openBattleViewer(hydrated);
   } catch (e) {
     addBalance(cost);
     toast('That battle just filled up or was cancelled — try another one.');
@@ -1296,13 +1296,6 @@ async function initPage() {
   window.__steps.push('wiring-done');
   // battle viewer header
   $('#bvBack').addEventListener('click', () => { location.hash = '#/case-battles'; });
-  const waitActionsHost = document.getElementById('bvWaitActions');
-  if (waitActionsHost) {
-    waitActionsHost.addEventListener('click', (e) => {
-      const bot = e.target.closest('[data-bot]');
-      if (bot) callBot(Number(bot.dataset.bot));
-    });
-  }
   // open-slot cards in the player bar double as Call Bot buttons
   const playerbarHost = document.getElementById('bvPlayerbar');
   if (playerbarHost) {
@@ -1628,10 +1621,10 @@ function waitBarHtml(b) {
   const players = [];
   b.teams.forEach((team) => team.forEach((p) => players.push(p)));
   const N = players.length;
-  // only the player who's actually in this battle can summon a bot into an
+  // only the battle owner (whoever created it) can summon a bot into an
   // open slot — everyone else just sees it's open, in case a real player
   // grabs it first
-  const canCall = battleHasUser(b);
+  const canCall = isOwner(b);
   return players.map((p, i) => p ? `
     <div class="bv-pbar-card ${p.you ? 'you' : ''}" id="pbcard${i}">
       <span class="lvl">${botLvl(p.n)}</span>
@@ -1697,7 +1690,6 @@ function renderLive(b) {
   const emptySlots = players.filter((p) => !p).length;
   $('#bvPlayerbar').innerHTML = waitBarHtml(b);
   const countEl = document.getElementById('bvCount');
-  const waitActions = document.getElementById('bvWaitActions');
 
   if (emptySlots > 0) {
     // still missing players — b.played stays false so polling (and the joiner's
@@ -1706,15 +1698,9 @@ function renderLive(b) {
     $('#bvRound').classList.remove('goldtxt');
     $('#bvStage').classList.add('stage-wait');
     if (countEl) countEl.hidden = true;
-    if (waitActions) {
-      const canCallBot = battleHasUser(b);
-      waitActions.hidden = !canCallBot;
-      if (canCallBot) waitActions.innerHTML = `<button class="btn btn-primary" id="bvCallBot" data-bot="${b.id}">Call Bot</button>`;
-    }
-    return; // reels wait until all slots are filled
+    return; // reels wait until all slots are filled — call bot via the open slot card
   }
 
-  if (waitActions) { waitActions.hidden = true; waitActions.innerHTML = ''; }
   $('#bvStage').classList.remove('stage-wait');
 
   // battle is full — if we've already started (or are mid-countdown) for THIS
@@ -2193,10 +2179,10 @@ async function recreateBattle(b) {
     const sb = await Api.createBattle({ mode: b.mode, type: b.type, cases: [...b.cases], name: currentUser.name });
     const nb = hydrateBattle(sb);
     battles.unshift(nb);
-    location.hash = '#/case-battles';
-    renderBattles();
     systemMsg(`${currentUser.name} recreated a ${m.label} battle — waiting for players…`);
     toast(`Battle recreated for ${fmt(cost)} coins!`);
+    // drop the owner straight back into the new battle, ready to call bots
+    openBattleViewer(nb);
   } catch (e) {
     addBalance(cost);
     toast('Could not recreate the battle — try again.');

@@ -429,9 +429,10 @@ async function joinBattle(id) {
     const idx = battles.findIndex((x) => x.id === id);
     if (idx > -1) battles[idx] = hydrated; else battles.unshift(hydrated);
     toast(`Joined ${MODES[b.mode].label} battle for ${fmt(cost)} coins!`);
-    // always open the same live view everyone else uses — renderLive handles
-    // the waiting screen / countdown itself, so no one skips ahead of anyone else
-    openBattleViewer(hydrated);
+    // don't auto-jump into the viewer from the menu — that skipped the
+    // "Watch Battle" step and left the list/viewer state out of sync.
+    // Stay on the battle list; the row now shows Call Bot/Leave (or Watch
+    // Battle once it's full) so the player enters on their own click.
     renderBattlesIfVisible();
   } catch (e) {
     addBalance(cost);
@@ -1302,6 +1303,19 @@ async function initPage() {
       if (bot) callBot(Number(bot.dataset.bot));
     });
   }
+  // open-slot cards in the player bar double as Call Bot buttons
+  const playerbarHost = document.getElementById('bvPlayerbar');
+  if (playerbarHost) {
+    playerbarHost.addEventListener('click', (e) => {
+      const bot = e.target.closest('[data-bot]');
+      if (bot) callBot(Number(bot.dataset.bot));
+    });
+    playerbarHost.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const bot = e.target.closest('[data-bot]');
+      if (bot) { e.preventDefault(); callBot(Number(bot.dataset.bot)); }
+    });
+  }
   $('#bvSound').addEventListener('click', () => {
     AudioFX.on = !AudioFX.on;
     localStorage.setItem('rbxwin_sound', AudioFX.on ? 'on' : 'off');
@@ -1614,6 +1628,10 @@ function waitBarHtml(b) {
   const players = [];
   b.teams.forEach((team) => team.forEach((p) => players.push(p)));
   const N = players.length;
+  // only the player who's actually in this battle can summon a bot into an
+  // open slot — everyone else just sees it's open, in case a real player
+  // grabs it first
+  const canCall = battleHasUser(b);
   return players.map((p, i) => p ? `
     <div class="bv-pbar-card ${p.you ? 'you' : ''}" id="pbcard${i}">
       <span class="lvl">${botLvl(p.n)}</span>
@@ -1621,9 +1639,9 @@ function waitBarHtml(b) {
       <b class="bv-uname">${p.you ? 'You' : p.n}</b>
       <span class="bv-won"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg><em id="tot${i}">0.00</em>${b.type === 'jackpot' ? `<b class="bv-jp-pct" id="jp${i}">${pctStr(100 / N)}</b>` : ''}</span>
     </div>` : `
-    <div class="bv-pbar-card empty" id="pbcard${i}">
-      <span class="avatar">${avatarSVG('open' + i)}</span>
-      <b class="bv-uname">Waiting for player…</b>
+    <div class="bv-pbar-card empty${canCall ? ' callable' : ''}" id="pbcard${i}"${canCall ? ` data-bot="${b.id}" role="button" tabindex="0" title="Call a bot into this slot"` : ''}>
+      <span class="avatar bot-avatar"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#bot"/></svg></span>
+      <b class="bv-uname">${canCall ? 'Call Bot' : 'Waiting for player…'}</b>
     </div>`).join('');
 }
 
@@ -1637,6 +1655,16 @@ function refreshWaitingView() {
 
 function renderLive(b) {
   clearLiveTimers();
+  // wipe any leftover results/winner card from a previous battle — without
+  // this, creating a new battle while an old "Recreate Battle" screen was
+  // still showing left that old winner card sitting on top of the fresh
+  // waiting screen.
+  const staleWinEl = document.getElementById('bvWinner');
+  if (staleWinEl) { staleWinEl.hidden = true; staleWinEl.innerHTML = ''; }
+  const staleStage = document.getElementById('bvStage');
+  if (staleStage) staleStage.classList.remove('gold-round', 'stage-done');
+  const staleConf = document.getElementById('bvConfetti');
+  if (staleConf) staleConf.innerHTML = '';
   const m = MODES[b.mode];
   const players = [];
   const teamOf = [];

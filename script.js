@@ -1628,7 +1628,7 @@ function updateLastPull(i, it) {
   el.innerHTML = (it.pct ? `<span class="bv-pull-pct">${it.pct}</span>` : '') +
     visual +
     `<span class="bv-pull-name">${it.name}</span>` +
-    `<span class="bv-pull-val"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg>${fmt(it.v)}</span>`;
+    `<span class="bv-pull-val"><svg viewBox="0 0 24 24" width="17" height="17"><use href="#coin"/></svg>${fmt(it.v)}</span>`;
   el.classList.add('show');
   el.classList.remove('pop');
   void el.offsetWidth;
@@ -1649,13 +1649,13 @@ function waitBarHtml(b) {
         <span class="lvl">${botLvl(p.n)}</span>
         <span class="avatar">${avatarSVG(p.k)}</span>
         <b class="bv-uname">${p.you ? 'You' : p.n}</b>
-        <span class="bv-won"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg><em id="tot${i}">0.00</em>${b.type === 'jackpot' ? `<b class="bv-jp-pct" id="jp${i}">${pctStr(100 / N)}</b>` : ''}</span>
+        <span class="bv-won"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg><em id="tot${i}">0.00</em>${b.type === 'jackpot' ? `<b class="bv-jp-pct" id="jp${i}">${pctStr(100 / N)}</b>` : ''}</span>
       </div>
       <div class="bv-pull" id="lastpull${i}"></div>
     </div>` : `
     <div class="bv-pbar-card empty${canCall ? ' callable' : ''}" id="pbcard${i}"${canCall ? ` data-bot="${b.id}" role="button" tabindex="0" title="Call a bot into this slot"` : ''}>
       <div class="bv-pbar-top">
-        <span class="avatar bot-avatar"><svg viewBox="0 0 24 24" width="28" height="28"><use href="#bot"/></svg></span>
+        <span class="avatar bot-avatar"><svg viewBox="0 0 24 24" width="20" height="20"><use href="#bot"/></svg></span>
         <b class="bv-uname">${canCall ? 'Call Bot' : 'Waiting for player…'}</b>
       </div>
     </div>`).join('');
@@ -2062,7 +2062,7 @@ function renderLive(b) {
         '<span class="lvl">' + botLvl(f.p.n) + '</span>' +
         '<span class="avatar">' + avatarSVG(f.p.k) + '</span>' +
         '<b class="bv-uname">' + (f.p.you ? 'You' : f.p.n) + '</b>' +
-        '<span class="bv-won"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg><em>' + fmt(rec.totals[i]) + '</em></span>' +
+        '<span class="bv-won"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg><em>' + fmt(rec.totals[i]) + '</em></span>' +
         '</div>';
     }).join('');
     $('#bvCols').innerHTML = flat.map(function (f, i) {

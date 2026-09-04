@@ -692,6 +692,7 @@ body.sidebar-hidden .sidebar{display:none}
 @keyframes pulseglow{from{opacity:.22}to{opacity:.4}}
 .bv-cross{width:46px;height:46px;border-radius:50%;background:#101b34;border:none;display:flex;align-items:center;justify-content:center;color:#8fb7ff;box-shadow:0 0 14px rgba(47,128,255,.3);flex-shrink:0}
 .bv-playerbar{display:grid;gap:12px;margin-top:14px;padding:0 20px}
+.bv-wait-actions{display:flex;justify-content:center;margin-top:16px}
 .bv-pbar-card{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(180deg,#101b34,#0d1628);border:none;border-radius:12px;padding:10px 14px}
 .bv-pbar-card .avatar{width:32px;height:32px}
 .bv-pbar-card.you{border-color:rgba(120,170,255,.45)}

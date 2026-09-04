@@ -691,19 +691,25 @@ body.sidebar-hidden .sidebar{display:none}
 @keyframes settlepop{from{transform:scale(.8)}60%{transform:scale(1.12)}to{transform:scale(1)}}
 @keyframes pulseglow{from{opacity:.22}to{opacity:.4}}
 .bv-cross{width:46px;height:46px;border-radius:50%;background:#101b34;border:none;display:flex;align-items:center;justify-content:center;color:#8fb7ff;box-shadow:0 0 14px rgba(47,128,255,.3);flex-shrink:0}
-.bv-playerbar{display:grid;gap:12px;margin-top:14px;padding:0 20px}
-.bv-pbar-card{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:8px;background:linear-gradient(180deg,#101b34,#0d1628);border:none;border-radius:12px;padding:10px 14px}
-.bv-pbar-top{display:flex;align-items:center;justify-content:center;gap:10px}
-.bv-pbar-card .avatar{width:32px;height:32px}
+.bv-playerbar{display:grid;gap:16px;margin-top:14px;padding:0 20px}
+.bv-pbar-card{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:12px;background:linear-gradient(180deg,#101b34,#0d1628);border:none;border-radius:16px;padding:16px 18px}
+.bv-pbar-top{display:flex;align-items:center;justify-content:center;gap:12px}
+.bv-pbar-card .avatar{width:46px;height:46px}
+.bv-pbar-card .lvl{font-size:13px;padding:4px 9px;border-radius:8px}
+.bv-pbar-card .bv-uname{font-size:16px;max-width:170px}
+.bv-pbar-card .bv-won{font-size:15px;gap:5px}
+.bv-pbar-card .bv-won svg{width:15px;height:15px}
+.bv-pbar-card .bv-jp-pct{font-size:12.5px;padding:3px 8px}
 .bv-pbar-card.you{border-color:rgba(120,170,255,.45)}
 /* last-pull chip: shown under a player's profile card each round — item + odds + value */
-.bv-pull{display:none;align-items:center;justify-content:center;gap:6px;background:linear-gradient(180deg,#141f3a,#0e1730);border-radius:8px;padding:5px 8px}
+.bv-pull{display:none;align-items:center;justify-content:center;gap:9px;background:linear-gradient(180deg,#141f3a,#0e1730);border-radius:12px;padding:9px 12px}
 .bv-pull.show{display:flex}
 .bv-pull.pop{animation:lootpop .35s ease}
-.bv-pull .it-glyph,.bv-pull .it-img{width:16px;height:16px;flex-shrink:0}
-.bv-pull-pct{font-size:9.5px;font-weight:800;color:#8fb7ff;background:rgba(47,128,255,.14);padding:2px 6px;border-radius:5px;flex-shrink:0}
-.bv-pull-name{font-size:10.5px;font-weight:700;color:#cfdaf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:78px}
-.bv-pull-val{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
+.bv-pull .it-glyph,.bv-pull .it-img{width:24px;height:24px;flex-shrink:0}
+.bv-pull-pct{font-size:13.5px;font-weight:800;color:#8fb7ff;background:rgba(47,128,255,.14);padding:4px 9px;border-radius:7px;flex-shrink:0}
+.bv-pull-name{font-size:15px;font-weight:700;color:#cfdaf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.bv-pull-val{display:flex;align-items:center;gap:5px;font-size:15.5px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;flex-shrink:0}
+.bv-pull-val svg{width:14px;height:14px}
 .bv-roundcards{display:grid;gap:12px;margin-top:14px}
 .bv-rc-col{display:flex;gap:10px}
 .bv-rcard{flex:1;min-height:96px;background:linear-gradient(180deg,#101b34,#0d1628);border:none;border-radius:12px;display:flex;align-items:center;justify-content:center;transition:border-color .2s,background .2s}

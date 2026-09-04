@@ -1628,7 +1628,7 @@ function updateLastPull(i, it) {
   el.innerHTML = (it.pct ? `<span class="bv-pull-pct">${it.pct}</span>` : '') +
     visual +
     `<span class="bv-pull-name">${it.name}</span>` +
-    `<span class="bv-pull-val"><svg viewBox="0 0 24 24" width="17" height="17"><use href="#coin"/></svg>${fmt(it.v)}</span>`;
+    `<span class="bv-pull-val"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg>${fmt(it.v)}</span>`;
   el.classList.add('show');
   el.classList.remove('pop');
   void el.offsetWidth;

@@ -385,7 +385,6 @@ function renderBattles() {
   const host = $('#battleList');
   if (!battles.length) {
     host.innerHTML = `<div class="battle-empty">
-        <svg viewBox="0 0 80 80" width="46" height="46"><use href="#swordsX"/></svg>
         <p>No open battles right now</p>
         <span>Create one — it only takes a few seconds.</span>
       </div>`;
@@ -545,6 +544,7 @@ function renderPv() {
 function openCases() {
   renderCbCases();
   $('#casesModal').classList.add('open');
+  setTimeout(() => $('#casesClose').focus(), 150);
 }
 
 function openCreate() {
@@ -648,6 +648,7 @@ function openView(id) {
       <span>${battleFilled(b)}/${battleSlots(b)} players</span>
     </div>`;
   $('#viewModal').classList.add('open');
+  setTimeout(() => $('#viewClose').focus(), 150);
 }
 
 /* ---------- router ---------- */
@@ -782,6 +783,7 @@ function submitAuth() {
 function openDeposit() {
   if (!currentUser) return openAuth('signup');
   $('#depositModal').classList.add('open');
+  setTimeout(() => $('#depositClose').focus(), 150);
 }
 
 /* ---------- chat ---------- */

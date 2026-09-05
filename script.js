@@ -262,6 +262,12 @@ function caseArt(k, keys) {
   const pal = CASE_PALETTES[keys.indexOf(k)] || 'blue';
   return '<svg class="chest ' + pal + '" viewBox="0 0 120 96"><use href="#chest"/></svg>';
 }
+
+// drop your own artwork here to have it show up in the "no open battles" empty
+// state — just put an image file at this path (relative to index.html) and it
+// will appear automatically. no code changes needed beyond this one line if
+// you rename the file or move it into a different folder.
+const BATTLE_EMPTY_IMG = 'assets/case-battles-empty.png';
 const MODES = {
   '1v1':   { label: '1 VS 1', teams: 2, per: 1, icon: 'swordsX', color: '#7cc0ff' },
   '2v2':   { label: '2 VS 2', teams: 2, per: 2, icon: 'shield', color: '#4da3ff' },
@@ -385,6 +391,7 @@ function renderBattles() {
   const host = $('#battleList');
   if (!battles.length) {
     host.innerHTML = `<div class="battle-empty">
+        <img src="${BATTLE_EMPTY_IMG}" alt="" class="battle-empty-img" onerror="this.remove()">
         <p>No open battles right now</p>
         <span>Create one — it only takes a few seconds.</span>
       </div>`;

@@ -688,23 +688,25 @@ function renderNav() {
   const host = $('#navAuth');
   if (currentUser) {
     host.innerHTML = `
+      <button class="btn btn-primary btn-sm nav-deposit" id="navDeposit">Deposit</button>
       <button class="balance-pill" id="balancePill" title="Your balance — click to deposit">
-        <svg class="pill-coin" viewBox="0 0 24 24" width="22" height="22"><use href="#coin"/></svg>
+        <svg class="pill-coin" viewBox="0 0 24 24" width="22" height="22"><use href="#coin"></use></svg>
         <b id="balanceValue">0.00</b>
       </button>
       <div class="user-menu">
         <button class="user-chip" id="userChip">
           <span class="user-avatar">${avatarSVG(avatarFor(currentUser.name))}</span>
           <span class="user-name">${currentUser.name}</span>
-          <span class="chev-svg" ><svg viewBox="0 0 24 24" width="10" height="10"><use href="#chev-d"/></svg></span>
+          <span class="chev-svg"><svg viewBox="0 0 24 24" width="10" height="10"><use href="#chev-d"></use></svg></span>
         </button>
         <div class="dropdown user-dropdown" id="userDropdown">
-          <a href="#" id="depositLink"><svg class="d-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg> Deposit</a>
-          <a href="#" id="logoutLink"><svg class="d-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#exit"/></svg> Log out</a>
+          <a href="#" id="depositLink"><svg class="d-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#coin"></use></svg> Deposit</a>
+          <a href="#" id="logoutLink"><svg class="d-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#exit"></use></svg> Log out</a>
         </div>
       </div>`;
     shownBalance = 0;
     renderBalance(false);
+    $('#navDeposit').addEventListener('click', openDeposit);
     $('#balancePill').addEventListener('click', openDeposit);
     $('#userChip').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -721,76 +723,10 @@ function renderNav() {
   } else {
     host.innerHTML = `
       <button class="btn btn-ghost" id="signInNav">Sign In</button>
-      <button class="btn btn-primary" id="signUpNav">Sign Up</button>`;
+      <button class="btn btn-primary btn-sm" id="signUpNav">Sign Up</button>`;
     $('#signInNav').addEventListener('click', () => openAuth('signin'));
     $('#signUpNav').addEventListener('click', () => openAuth('signup'));
   }
-  updateChatInput();
-  if (!$('#view-create').hidden) renderPv();
-}
-
-document.addEventListener('click', (e) => {
-  const dd = $('#userDropdown');
-  if (dd && dd.classList.contains('open') && !e.target.closest('.user-menu')) dd.classList.remove('open');
-});
-
-/* ---------- auth modal ---------- */
-let authMode = 'signin';
-function openAuth(mode = 'signin') {
-  authMode = mode;
-  $('#authError').textContent = '';
-  $('#authUser').value = '';
-  $('#authPass').value = '';
-  syncAuthUI();
-  $('#authModal').classList.add('open');
-  setTimeout(() => $('#authUser').focus(), 150);
-}
-function syncAuthUI() {
-  $$('.auth-tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === authMode));
-  $('#authTitle').textContent = authMode === 'signup' ? 'Create your account' : 'Welcome back';
-  $('#authHint').textContent = authMode === 'signup'
-    ? 'Create a free account and get 100.00 coins to start playing.'
-    : 'Sign in to pick up right where you left off.';
-  $('#authSubmit').textContent = authMode === 'signup' ? 'Create Account' : 'Sign In';
-}
-function authFail(msg) { $('#authError').textContent = msg; }
-
-function submitAuth() {
-  const name = $('#authUser').value.trim();
-  const pass = $('#authPass').value;
-  if (!/^[A-Za-z0-9_]{3,16}$/.test(name)) return authFail('Username must be 3–16 letters, numbers or _');
-  if (pass.length < 4) return authFail('Password must be at least 4 characters');
-  const users = store.users();
-  if (authMode === 'signup') {
-    if (users[name]) return authFail('That username is already taken');
-    users[name] = { pass, balance: 100, created: Date.now() };
-    store.saveUsers(users);
-    currentUser = { name, ...users[name] };
-    store.setSession(name);
-    $('#authModal').classList.remove('open');
-    renderNav();
-    shownBalance = 0;
-    renderBalance(true);
-    renderPv();
-    toast(`Welcome to RBXWIN, ${name}! 100.00 coins credited`);
-    systemMsg(`${name} just joined — say hi!`);
-  } else {
-    const u = users[name];
-    if (!u || u.pass !== pass) return authFail('Wrong username or password');
-    currentUser = { name, ...u };
-    store.setSession(name);
-    $('#authModal').classList.remove('open');
-    renderNav();
-    toast(`Welcome back, ${name}!`);
-    systemMsg(`${name} signed in.`);
-  }
-}
-
-/* ---------- deposit modal ---------- */
-function openDeposit() {
-  if (!currentUser) return openAuth('signup');
-  $('#depositModal').classList.add('open');
-  setTimeout(() => $('#depositClose').focus(), 150);
 }
 
 /* ---------- chat ---------- */

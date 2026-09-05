@@ -688,7 +688,7 @@ function renderNav() {
   const host = $('#navAuth');
   if (currentUser) {
     host.innerHTML = `
-      <button class="btn btn-primary btn-sm nav-deposit" id="navDeposit">Deposit</button>
+      <button class="btn btn-primary btn-sm nav-deposit" id="navDeposit">Wallet</button>
       <button class="balance-pill" id="balancePill" title="Your balance — click to deposit">
         <svg class="pill-coin" viewBox="0 0 24 24" width="22" height="22"><use href="#coin"></use></svg>
         <b id="balanceValue">0.00</b>
@@ -727,6 +727,7 @@ function renderNav() {
     $('#signInNav').addEventListener('click', () => openAuth('signin'));
     $('#signUpNav').addEventListener('click', () => openAuth('signup'));
   }
+  updateChatInput();
 }
 
 /* ---------- chat ---------- */
@@ -766,13 +767,14 @@ async function pollChat() {
 function updateChatInput() {
   const inp = $('#chatMsg');
   const btn = $('#chatSend');
+  if (!inp || !btn) return;
   if (currentUser) {
     inp.disabled = false;
     btn.disabled = false;
     inp.placeholder = `Message chat as ${currentUser.name}…`;
   } else {
     inp.disabled = true;
-    btn.disabled = true;
+    btn.disabled = false;
     inp.value = '';
     inp.placeholder = 'Sign in to chat…';
   }

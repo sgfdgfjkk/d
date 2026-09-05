@@ -1069,6 +1069,15 @@ async function initPage() {
   (function () {
     const bjBet = $('#bjBetInput');
     if (!bjBet) return;
+    const bjBetWrap = bjBet.closest('.bj-bet-input');
+
+    const validateBet = () => {
+      if (inRound) { bjBetWrap.classList.remove('invalid'); return; }
+      const amt = parseFloat(bjBet.value);
+      const bal = currentUser ? currentUser.balance * 0.002 : 0;
+      bjBetWrap.classList.toggle('invalid', !!(currentUser && amt > 0 && amt > bal));
+    };
+    bjBet.addEventListener('input', validateBet);
 
     $$('.bj-quick button').forEach((btn) => btn.addEventListener('click', () => {
       const bal = currentUser ? currentUser.balance * 0.002 : 0;
@@ -1077,6 +1086,7 @@ async function initPage() {
       if (f === 'max') bjBet.value = bal.toFixed(2);
       else if (f === '2') bjBet.value = Math.min(cur * 2 || bal, bal).toFixed(2);
       else bjBet.value = (cur * 0.5).toFixed(2);
+      validateBet();
     }));
 
     const SUITS = [
@@ -1113,10 +1123,10 @@ async function initPage() {
     };
     const isBlackjack = (cards) => cards.length === 2 && handTotal(cards).total === 21;
 
-    const cardHTML = (card, hidden, isNew) => {
+    const cardHTML = (card, hidden, isNew, isFlip) => {
       if (hidden) return '<div class="bjc hidden' + (isNew ? ' new' : '') + '"></div>';
       const suit = SUITS.find((s) => s.k === card.s);
-      return '<div class="bjc ' + suit.color + (isNew ? ' new' : '') + '">' +
+      return '<div class="bjc ' + suit.color + (isNew ? ' new' : '') + (isFlip ? ' flip' : '') + '">' +
         '<span class="r">' + card.r + '</span>' +
         '<svg class="s" viewBox="0 0 24 24"><path fill="currentColor" d="' + suit.path + '"/></svg>' +
         '<span class="r" style="align-self:flex-end;transform:rotate(180deg)">' + card.r + '</span>' +
@@ -1127,6 +1137,7 @@ async function initPage() {
     let dealer = [];
     let active = 0;
     let dealerHoleHidden = true;
+    let dealerHoleWasHidden = true;
     let dealerRendered = 0;
     let inRound = false;
 
@@ -1148,8 +1159,10 @@ async function initPage() {
     const renderTable = () => {
       const dTot = dealer.length ? handTotal(dealerHoleHidden ? [dealer[0]] : dealer) : { total: 0, soft: false };
       $('#bjDealerTotal').textContent = (dealerHoleHidden || !dealer.length) ? '' : ('(' + dTot.total + (dTot.soft ? ' soft' : '') + ')');
-      $('#bjDealerHand').innerHTML = dealer.map((c, i) => cardHTML(c, dealerHoleHidden && i === 1, i >= dealerRendered)).join('');
+      const revealingHole = dealerHoleWasHidden && !dealerHoleHidden && dealer.length > 1;
+      $('#bjDealerHand').innerHTML = dealer.map((c, i) => cardHTML(c, dealerHoleHidden && i === 1, i >= dealerRendered, i === 1 && revealingHole)).join('');
       dealerRendered = dealer.length;
+      dealerHoleWasHidden = dealerHoleHidden;
 
       const area = $('#bjPlayerArea');
       area.innerHTML = hands.map((h, i) => {
@@ -1170,8 +1183,9 @@ async function initPage() {
       setButtons();
     };
 
-    const showResult = (title, sub) => {
+    const showResult = (title, sub, kind) => {
       const el = $('#bjResult');
+      el.className = 'bj-result' + (kind ? ' ' + kind : '');
       el.innerHTML = '<h4>' + title + '</h4><span>' + sub + '</span>';
       el.hidden = false;
       requestAnimationFrame(() => el.classList.add('show'));
@@ -1198,9 +1212,9 @@ async function initPage() {
       renderTable();
       const won = hands.filter((h) => h.result === 'win').length;
       const pushed = hands.filter((h) => h.result === 'push').length;
-      if (won > 0) showResult(hands.some((h) => h.blackjackWin) ? 'Blackjack!' : 'You Win!', 'Payout added to your balance');
-      else if (pushed === hands.length) showResult('Push', 'Your bet has been returned');
-      else showResult('Dealer Wins', 'Better luck next round');
+      if (won > 0) showResult(hands.some((h) => h.blackjackWin) ? 'Blackjack!' : 'You Win!', 'Payout added to your balance', hands.some((h) => h.blackjackWin) ? 'blackjack' : 'win');
+      else if (pushed === hands.length) showResult('Push', 'Your bet has been returned', 'push');
+      else showResult('Dealer Wins', 'Better luck next round', 'lose');
       setButtons();
     };
 
@@ -1294,6 +1308,7 @@ async function initPage() {
       dealer = [];
       active = 0;
       dealerHoleHidden = true;
+      dealerHoleWasHidden = true;
       dealerRendered = 0;
       inRound = true;
       $('#bjResult').hidden = true;

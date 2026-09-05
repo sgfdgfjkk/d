@@ -350,44 +350,75 @@ function caseStrip(b) {
   }).join('');
 }
 
+function battleRowInner(b) {
+  const m = MODES[b.mode];
+  const cost = battleCost(b);
+  const pot = battlePot(b);
+  const full = isFull(b);
+  const mine = battleHasUser(b);
+  let action;
+  if (full) action = `<button class="btn btn-view" data-view="${b.id}">Watch Battle</button>`;
+  else if (mine) action = `${isOwner(b) ? `<button class="btn btn-primary" data-bot="${b.id}">Call Bot</button>` : ''}<button class="btn-call" data-leave="${b.id}">Leave &amp; Refund</button>`;
+  else action = `<button class="btn btn-primary" data-join="${b.id}">Join Battle</button>`;
+  return `
+    <div class="b-team">
+      <div class="b-mode"><span class="b-pill" style="color:${m.color}">${m.label}</span>${b.type === 'jackpot' ? '<span class="b-jack" title="Jackpot — winner takes all"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#target"/></svg></span>' : ''}</div>
+      <div class="b-slots">${slotBoxes(b)}</div>
+    </div>
+    <div class="b-cases">
+      <span class="b-badge" title="players joined / total">${battleFilled(b)}/${battleSlots(b)}</span>
+      ${caseStrip(b)}
+    </div>
+    <div class="b-right">
+      ${full
+        ? `<div class="pot"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg><b>${fmt(pot)}</b></div><div class="pot-label">TOTAL POT</div>`
+        : `<div class="pot"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg><b>${fmt(cost)}</b></div><div class="pot-label">BATTLE COST</div>`}
+    </div>
+    <div class="b-action">
+      ${action}
+      <div class="b-status">${full ? 'battle ready' : 'waiting for players'}</div>
+    </div>`;
+}
+
 function renderBattles() {
   battles = battles.filter(validBattle);
   const host = $('#battleList');
   if (!battles.length) {
-    host.innerHTML = `<div class="battle-empty">No open battles right now — create the first one!</div>`;
+    host.innerHTML = `<div class="battle-empty">
+        <svg viewBox="0 0 80 80" width="46" height="46"><use href="#swordsX"/></svg>
+        <p>No open battles right now</p>
+        <span>Create one — it only takes a few seconds.</span>
+      </div>`;
     return;
   }
-  host.innerHTML = battles.map((b) => {
-    const m = MODES[b.mode];
-    const cost = battleCost(b);
-    const pot = battlePot(b);
-    const full = isFull(b);
-    const mine = battleHasUser(b);
-    let action;
-    if (full) action = `<button class="btn btn-view" data-view="${b.id}">Watch Battle</button>`;
-    else if (mine) action = `${isOwner(b) ? `<button class="btn btn-primary" data-bot="${b.id}">Call Bot</button>` : ''}<button class="btn-call" data-leave="${b.id}">Leave &amp; Refund</button>`;
-    else action = `<button class="btn btn-primary" data-join="${b.id}">Join Battle</button>`;
-    return `
-      <div class="battle-row">
-        <div class="b-team">
-          <div class="b-mode"><span class="b-pill" style="color:${m.color}">${m.label}</span>${b.type === 'jackpot' ? '<span class="b-jack" title="Jackpot — winner takes all"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#target"/></svg></span>' : ''}</div>
-          <div class="b-slots">${slotBoxes(b)}</div>
-        </div>
-        <div class="b-cases">
-          <span class="b-badge" title="players joined / total">${battleFilled(b)}/${battleSlots(b)}</span>
-          ${caseStrip(b)}
-        </div>
-        <div class="b-right">
-          ${full
-            ? `<div class="pot"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg><b>${fmt(pot)}</b></div><div class="pot-label">TOTAL POT</div>`
-            : `<div class="pot"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg><b>${fmt(cost)}</b></div><div class="pot-label">BATTLE COST</div>`}
-        </div>
-        <div class="b-action">
-          ${action}
-          <div class="b-status">${full ? 'battle ready' : 'waiting for players'}</div>
-        </div>
-      </div>`;
-  }).join('');
+  // keyed diff-render: this list re-renders every 2s from the poll, so rebuilding
+  // the whole innerHTML each time would reset any row a player is mid-hover on,
+  // cancel in-flight CSS transitions, and make every battle "jump" every 2 seconds.
+  // instead we keep existing row elements alive, only touch ones whose content
+  // actually changed, and only animate rows that are genuinely new.
+  const seen = new Set();
+  let prevEl = null;
+  battles.forEach((b) => {
+    const id = String(b.id);
+    seen.add(id);
+    const html = battleRowInner(b);
+    let row = host.querySelector(`.battle-row[data-bid="${id}"]`);
+    if (row) {
+      if (row.__sig !== html) { row.innerHTML = html; row.__sig = html; }
+    } else {
+      row = document.createElement('div');
+      row.className = 'battle-row row-enter';
+      row.dataset.bid = id;
+      row.innerHTML = html;
+      row.__sig = html;
+      row.addEventListener('animationend', () => row.classList.remove('row-enter'), { once: true });
+    }
+    if (prevEl ? prevEl.nextElementSibling !== row : host.firstElementChild !== row) {
+      host.insertBefore(row, prevEl ? prevEl.nextElementSibling : host.firstElementChild);
+    }
+    prevEl = row;
+  });
+  host.querySelectorAll('.battle-row').forEach((el) => { if (!seen.has(el.dataset.bid)) el.remove(); });
 }
 
 const battlesVisible = () => !$('#view-battles').hidden;
@@ -1781,6 +1812,19 @@ function renderLive(b) {
     });
   };
 
+  // the pot chip in the header used to sit frozen at 0.00 for the whole battle
+  // and only snap to the real number at the very end — now it counts up live,
+  // the same way the balance pill does, so the pot actually feels like it's growing
+  let shownPot = 0;
+  const updateLivePot = () => {
+    const el = document.getElementById('bvPot');
+    if (!el) return;
+    const sum = Math.round(totals.reduce((a, v) => a + v, 0) * 100) / 100;
+    if (sum === shownPot) return;
+    animateCount(el, shownPot, sum, 500);
+    shownPot = sum;
+  };
+
   const poolFor = (caseKey) => ITEM_POOLS[caseKey] || ITEM_POOLS.core;
   // normal rounds spin ONLY the bottom half of the case (cheapest items, plus the token)
   const cheapPool = (caseKey) => {
@@ -1894,6 +1938,7 @@ function renderLive(b) {
       totals[gi] += land.v; bags[gi].push(land);
       var t = document.getElementById('tot' + gi); if (t) t.textContent = fmt(totals[gi]);
       updateJackpotPcts();
+      updateLivePot();
       if (alive()) toast((gp.you ? 'You' : gp.n) + ' unboxed ' + land.name + ' - ' + fmt(land.v) + '!');
       liveTimers.push(setTimeout(done, 1300));
     }, 5650));
@@ -2121,6 +2166,7 @@ function renderLive(b) {
         totals[i] += it.v; bags[i].push(it);
         var t = document.getElementById('tot' + i); if (t) t.textContent = fmt(totals[i]);
         updateJackpotPcts();
+        updateLivePot();
         if (!it.token) updateLastPull(i, it);
         if (it.token) {
           pending++;
@@ -2172,6 +2218,7 @@ function renderLive(b) {
       bags[i][bags[i].length - 1] = prize;
       var t = document.getElementById('tot' + i); if (t) t.textContent = fmt(totals[i]);
       updateJackpotPcts();
+      updateLivePot();
       updateLastPull(i, prize);
       col.classList.add('gold-hit');
       AudioFX.gold();

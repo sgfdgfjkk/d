@@ -537,7 +537,7 @@
       <div class="rain-label">Hourly Rain <span class="rain-timer" id="rainTimer">1:00</span></div>
       <div class="rain-row">
         <span class="rain-amount"><svg class="rain-coin" viewBox="0 0 24 24" width="19" height="19"><use href="#coin"/></svg> <b>100.00</b></span>
-        <button class="icon-btn" title="Rain balance" id="rainInfoBtn"><svg viewBox="0 0 24 24" width="15" height="15"><use href="#coin"/></svg></button>
+        <button class="icon-btn" title="Rain balance" aria-label="Rain balance info" id="rainInfoBtn"><svg viewBox="0 0 24 24" width="15" height="15"><use href="#coin"/></svg></button>
         <button class="btn btn-primary btn-sm" id="joinRainBtn">Join Rain</button>
       </div>
     </div>
@@ -546,17 +546,17 @@
 
     <div class="chat-input">
       <input type="text" id="chatMsg" maxlength="120" placeholder="Sign in to chat…" disabled>
-      <button class="send-btn" id="chatSend" title="Send" disabled><svg viewBox="0 0 24 24" width="16" height="16"><use href="#send"/></svg></button>
+      <button class="send-btn" id="chatSend" title="Send" aria-label="Send message" disabled><svg viewBox="0 0 24 24" width="16" height="16"><use href="#send"/></svg></button>
     </div>
   </aside>
 </div>
 
-<button class="chat-toggle" id="chatToggle" title="Toggle chat"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#bubble"/></svg></button>
+<button class="chat-toggle" id="chatToggle" title="Toggle chat" aria-label="Toggle chat sidebar"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#bubble"/></svg></button>
 
 <!-- auth modal -->
-<div class="modal-backdrop" id="authModal">
+<div class="modal-backdrop" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
   <div class="modal">
-    <button class="modal-close" id="authClose"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <button class="modal-close" id="authClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
     <div class="auth-tabs">
       <button class="auth-tab active" data-tab="signin">Sign In</button>
       <button class="auth-tab" data-tab="signup">Sign Up</button>
@@ -573,10 +573,10 @@
 </div>
 
 <!-- deposit modal -->
-<div class="modal-backdrop" id="depositModal">
+<div class="modal-backdrop" id="depositModal" role="dialog" aria-modal="true" aria-labelledby="depositTitle">
   <div class="modal">
-    <button class="modal-close" id="depositClose"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
-    <h2>Deposit coins</h2>
+    <button class="modal-close" id="depositClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <h2 id="depositTitle">Deposit coins</h2>
     <p class="muted">Pick a package — coins are credited to your balance instantly.</p>
     <div class="deposit-grid">
       <button class="deposit-option" data-amount="100"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg> +100</button>
@@ -590,20 +590,20 @@
 <!-- create battle is a full page now (see #view-create) -->
 
 <!-- view battle modal -->
-<div class="modal-backdrop" id="viewModal">
+<div class="modal-backdrop" id="viewModal" role="dialog" aria-modal="true" aria-label="Battle details">
   <div class="modal modal-lg">
-    <button class="modal-close" id="viewClose"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <button class="modal-close" id="viewClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
     <div id="viewBody"></div>
   </div>
 </div>
 
 <!-- add cases modal -->
-<div class="modal-backdrop" id="casesModal">
+<div class="modal-backdrop" id="casesModal" role="dialog" aria-modal="true" aria-labelledby="casesTitle">
   <div class="modal ac-modal">
-    <button class="modal-close" id="casesClose"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <button class="modal-close" id="casesClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
     <div class="ac-head">
       <div class="cbp-badge small"><svg class="chest gold" viewBox="0 0 120 96" width="24" height="19"><use href="#chest"/></svg></div>
-      <div class="cbp-titlewrap"><h2>Add Cases</h2><span class="cbp-underline"></span></div>
+      <div class="cbp-titlewrap"><h2 id="casesTitle">Add Cases</h2><span class="cbp-underline"></span></div>
     </div>
     <div class="ac-bar">
       <div class="cb-search">

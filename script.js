@@ -289,7 +289,7 @@ async function pollBalance() {
     }
   } catch (e) {}
 }
-setInterval(pollBalance, 4000);
+setInterval(pollBalance, 1500);
 
 function animateCount(el, from, to, ms = 550) {
   const t0 = performance.now();

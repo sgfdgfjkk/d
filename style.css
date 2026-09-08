@@ -116,7 +116,7 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- layout ---------- */
 .layout{display:flex;min-height:calc(100vh - 62px)}
-.content{flex:1;max-width:1500px;margin:0 auto;padding:32px 42px 44px;min-width:0;position:relative}
+.content{flex:1;padding:32px 42px 44px;min-width:0;position:relative}
 
 /* ---------- nav rail (left sidebar) ---------- */
 .navrail{width:234px;flex-shrink:0;position:sticky;top:62px;height:calc(100vh - 62px);z-index:5;
@@ -1536,10 +1536,10 @@ body::after{
 .tile-art svg{width:64px;height:64px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.45))}
 .tile-art svg.chest{width:92px;height:74px}
 .tile b{position:relative;z-index:1;font-size:15.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;text-align:center;line-height:1.12;text-shadow:0 3px 10px rgba(0,0,0,.5);padding:0 10px}
-.t-battles{background:radial-gradient(120% 100% at 50% 0%,#d05a3a 0%,#a03020 45%,#5e1a12 100%)}
+.t-battles{background:radial-gradient(120% 100% at 50% 0%,#3fa0e8 0%,#1e5fc0 45%,#0a2a66 100%)}
 .t-blackjack{background:radial-gradient(120% 100% at 50% 0%,#3a7de0 0%,#1e4fa8 45%,#0e2a5e 100%)}
 .t-cases{background:radial-gradient(120% 100% at 50% 0%,#3f8fe8 0%,#1e55b0 45%,#0d2a66 100%)}
-.t-mines{background:radial-gradient(120% 100% at 50% 0%,#8a5ae0 0%,#5430a8 45%,#251358 100%)}
+.t-mines{background:radial-gradient(120% 100% at 50% 0%,#3fa0e8 0%,#1e5fc0 45%,#0a2a66 100%)}
 .t-towers{background:radial-gradient(120% 100% at 50% 0%,#7488ad 0%,#46557a 45%,#232c47 100%)}
 .t-crash{background:radial-gradient(120% 100% at 50% 0%,#e08a3a 0%,#b05420 45%,#5e2a0e 100%)}
 .t-limbo{background:radial-gradient(120% 100% at 50% 0%,#4a66d8 0%,#2a3a9e 45%,#141c50 100%)}
@@ -1600,6 +1600,11 @@ body::after{
 
 .tile-art svg{width:70px;height:70px}
 .tile-img{width:100px;height:auto;filter:drop-shadow(0 12px 22px rgba(0,0,0,.5))}
+.tile-banner{padding-bottom:16px}
+.tile-banner-img{position:relative;inset:auto;width:120px;height:auto;object-fit:contain;object-position:center;filter:drop-shadow(0 10px 18px rgba(0,0,0,.45))}
+.t-blackjack .tile-banner-img{width:170px}
+.t-battles .tile-banner-img{width:150px}
+.t-mines .tile-banner-img{width:150px}
 .tile-cards{position:relative}
 .tile-cards svg{width:54px;height:auto;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
 .tile-cards .bj-card-b{transform:rotate(9deg) translateX(15px)}

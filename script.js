@@ -206,24 +206,6 @@ const Api = {
     if (!r.ok) throw new Error('chat post failed');
     return r.json();
   },
-  async getUser(name) {
-    const r = await fetch(`/api/users/${encodeURIComponent(name)}`);
-    if (!r.ok) return null;
-    return r.json();
-  },
-  async syncUser(name, balance) {
-    try {
-      await fetch(`/api/users/${encodeURIComponent(name)}/sync`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ balance }),
-      });
-    } catch (e) {}
-  },
-  async tip(to, amount) {
-    const r = await fetch('/api/tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to, amount }) });
-    const body = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(body.error || 'tip failed');
-    return body;
-  },
 };
 
 let currentUser = null;
@@ -233,29 +215,6 @@ function loadSession() {
   const name = store.session();
   const u = store.users();
   if (name && u[name]) currentUser = { name, ...u[name] };
-  reconcileWithServer();
-}
-
-// Runs once on page load for anyone already signed in (not just fresh
-// sign-ins). Registers the account on the shared server if it isn't there
-// yet, and picks up any tips received since the last visit — so nobody
-// has to manually re-sign-in for tipping to start working for them.
-async function reconcileWithServer() {
-  if (!currentUser) return;
-  const name = currentUser.name;
-  try {
-    const remote = await Api.getUser(name);
-    if (!currentUser || currentUser.name !== name) return; // user changed/logged out while awaiting
-    if (remote) {
-      if (remote.balance !== currentUser.balance) {
-        const wasLower = remote.balance > currentUser.balance;
-        setBalance(remote.balance);
-        if (wasLower) toast(`You received a tip while you were away!`);
-      }
-    } else {
-      Api.syncUser(name, currentUser.balance); // first time seen by this server — register it
-    }
-  } catch (e) {}
 }
 
 function persistUser() {
@@ -263,10 +222,6 @@ function persistUser() {
   const u = store.users();
   u[currentUser.name] = { pass: currentUser.pass, balance: currentUser.balance, created: currentUser.created };
   store.saveUsers(u);
-  // Mirror the balance to the shared server so other players (on their own
-  // browsers/devices) can find this account — this is what makes tipping,
-  // and cross-device sign-in, actually work.
-  Api.syncUser(currentUser.name, currentUser.balance);
 }
 
 function animateCount(el, from, to, ms = 550) {
@@ -319,7 +274,6 @@ const CASE_TYPES = {
   inferno: { name: 'Red Valk', price: 9000 },
   dominus: { name: 'Dominus Case', price: 18000 },
   galaxy:  { name: 'HUGEEE',  price: 45000 },
-  relic:   { name: 'The big one', price: 75000 },
 };
 const CASE_PALETTES = ['blue', 'pink', 'green', 'cyan', 'gold', 'red', 'purple', 'white', 'orange', 'kraken'];
 
@@ -330,7 +284,6 @@ const CASE_IMG = {
   inferno: { img: 'cases/case-red.png', c: '#ff5c4a' },
   dominus: { img: 'cases/case-purple.png', c: '#a86cff' },
   galaxy: { img: 'cases/case-gold.png', c: '#f2c94c' },
-  relic: { img: 'cases/download (4).png', c: '#c9a06c' },
 };
 function caseAccent(k) { return CASE_IMG[k] ? CASE_IMG[k].c : null; }
 function caseArt(k, keys) {
@@ -815,7 +768,6 @@ async function submitAuth() {
     store.saveUsers(users);
     currentUser = { name, ...users[name] };
     store.setSession(name);
-    Api.syncUser(name, currentUser.balance); // register on the shared server so others can tip this account
     $('#authModal').classList.remove('open');
     renderNav();
     toast(`Welcome, ${name} — 100.00 coins claimed!`);
@@ -828,9 +780,6 @@ async function submitAuth() {
     $('#authModal').classList.remove('open');
     renderNav();
     toast(`Welcome back, ${name}!`);
-    // Pick up any tips (or other balance changes) that landed on the shared
-    // server while this account was signed out or used elsewhere.
-    reconcileWithServer();
   }
 }
 
@@ -1040,23 +989,6 @@ setInterval(() => {
 
 /* ---------- chat now syncs from the server ---------- */
 setInterval(pollChat, 1500);
-
-/* ---------- pick up tips (and other shared-balance changes) live ---------- */
-async function pollOwnBalance() {
-  if (!currentUser) return;
-  try {
-    const remote = await Api.getUser(currentUser.name);
-    if (remote && currentUser && remote.name === currentUser.name && remote.balance > currentUser.balance) {
-      const gained = Math.round((remote.balance - currentUser.balance) * 100) / 100;
-      currentUser.balance = remote.balance;
-      const u = store.users();
-      if (u[currentUser.name]) { u[currentUser.name].balance = remote.balance; store.saveUsers(u); }
-      renderBalance(true);
-      toast(`You received a tip of ${fmt(gained)} coins!`);
-    }
-  } catch (e) {}
-}
-setInterval(pollOwnBalance, 4000);
 
 /* ================================================================
    INIT & WIRING
@@ -1573,7 +1505,7 @@ async function initPage() {
 const GOLD_ODDS = {
   kraken: 0.05,
   core: 0.10, blossom: 0.09, toxic: 0.08, frost: 0.07, winter: 0.06,
-  royal: 0.05, inferno: 0.045, dominus: 0.04, galaxy: 0.03, relic: 0.05
+  royal: 0.05, inferno: 0.045, dominus: 0.04, galaxy: 0.03
 };
 function goldOdds(caseKey) { return GOLD_ODDS[caseKey] || 0.05; }
 
@@ -1670,30 +1602,10 @@ const ITEM_POOLS = {
     { name: 'Winky', v: 200, w: 29.4, img: 'items/winky.png', c: '#5aa2ff' },
     { name: 'Gold Token', v: 100, w: 0.8, img: 'items/gold-token.png', c: '#ffd35c', token: true },
   ],
-  relic: [
-    { name: 'Wink Face', v: 1, w: 95, img: 'items/wink.png', c: '#7cc0ff' },
-    { name: 'Fedora Face', v: 14, w: 0.9, img: 'items/noFilter.png', c: '#c9a06c' },
-    { name: 'Classic Fedora', v: 20, w: 0.7, img: 'items/noFilter (1).png', c: '#b98d55' },
-    { name: 'Vintage Fedora', v: 30, w: 0.6, img: 'items/noFilter (2).png', c: '#a67c46' },
-    { name: 'Dominus Astra', v: 75, w: 0.9, img: 'items/noFilter (4).png', c: '#a86cff' },
-    { name: 'Dominus Empyreus', v: 95, w: 0.6, img: 'items/noFilter (5).png', c: '#8f4fff' },
-    { name: 'Gold Token', v: 100, w: 0.9, img: 'items/gold-token.png', c: '#ffd35c', token: true },
-  ],
 };
-// Scale each case's item pool so its weighted-average payout lands at a
-// target RTP of the case's real price (a normal house edge), instead of a
-// blanket ×40 that let cheap/expensive cases run at wildly different RTPs.
-// Driven entirely by each item's real w/v, so it self-corrects if you ever
-// tweak an item's odds or value.
-const CASE_RTP = 0.9; // average payout as a fraction of case price
-for (const [key, pool] of Object.entries(ITEM_POOLS)) {
-  const caseInfo = CASE_TYPES[key];
-  if (!caseInfo) continue; // pool isn't wired to a real, priced case — leave it alone
-  const totalW = pool.reduce((a, x) => a + (x.w || 1), 0);
-  const rawAvg = pool.reduce((a, x) => a + (x.v || 0) * (x.w || 1), 0) / totalW;
-  if (!rawAvg) continue;
-  const scale = (caseInfo.price * CASE_RTP) / rawAvg;
-  pool.forEach((it) => { it.v = Math.round(it.v * scale); });
+// bump case item values so top-tier drops feel like real money (gold spin should actually hit big)
+for (const pool of Object.values(ITEM_POOLS)) {
+  pool.forEach((it) => { it.v = Math.round(it.v * 40); });
 }
 function poolPcts(pool) {
   const total = pool.reduce((a, x) => a + (x.w || 1), 0);
@@ -1887,7 +1799,7 @@ function spinCardHtml(it, w) {
 
 function lootCardHtml(it) {
   if (it.token) {
-    return `<div class="loot-card token">${tokenModelHtml()}</div>`;
+    return `<div class="loot-card token"><img class="it-img" src="${it.img}" alt=""></div>`;
   }
   const visual = it.img
     ? `<img class="it-img" src="${it.img}" alt="">`
@@ -1910,15 +1822,9 @@ function spawnConfetti() {
   c.innerHTML = html;
 }
 
-function tokenModelHtml(cls) {
-  return `<model-viewer class="token-model${cls ? ' ' + cls : ''}" src="models/robux.glb"
-    camera-orbit="0deg 78deg 105%" field-of-view="26deg" interaction-prompt="none"
-    disable-zoom shadow-intensity="0" exposure="1.15"></model-viewer>`;
-}
-
 function miniItem(it) {
   if (it.token) {
-    return `<div class="mini-item token">${tokenModelHtml('mi-token-model')}</div>`;
+    return `<div class="mini-item token"><img class="it-img" src="${it.img}" alt=""></div>`;
   }
   const visual = it.img
     ? `<img class="it-img" src="${it.img}" alt="">`
@@ -2005,15 +1911,6 @@ function renderLive(b) {
   if (staleStage) staleStage.classList.remove('gold-round', 'stage-done');
   const staleConf = document.getElementById('bvConfetti');
   if (staleConf) staleConf.innerHTML = '';
-  // the jackpot wheel from the PREVIOUS battle can get stuck visible: if you
-  // navigate to a new battle while its hide-after-settle timer is still
-  // pending, clearLiveTimers() above wipes that timeout before it ever sets
-  // wheelEl.hidden = true, so the old wheel (old names/pot/%s) was still
-  // sitting on screen over the new battle. Force it closed on every fresh render.
-  const staleWheel = document.getElementById('jackpotWheel');
-  if (staleWheel) { staleWheel.hidden = true; staleWheel.classList.remove('settled'); }
-  const staleTrack = document.getElementById('jwTrack');
-  if (staleTrack) staleTrack.innerHTML = '';
   const m = MODES[b.mode];
   const players = [];
   const teamOf = [];
@@ -2062,7 +1959,7 @@ function renderLive(b) {
   // battle is full — if we've already started (or are mid-countdown) for THIS
   // fill, don't restart; otherwise run the 3-2-1 countdown once, then begin.
   if (b.played || b._counting) return;
-  if (seenHas(b.seed) || b.started) {
+  if (seenHas(b.id) || b.started) {
     // this battle already spun somewhere else (another tab / player / before a
     // reload) — resolve it instantly so payouts + results stay in sync
     b.played = true;
@@ -2076,7 +1973,7 @@ function renderLive(b) {
       renderBattlesIfVisible();
       Api.completeBattle(b.id);
       const battleHasMe = b.teams.some(function (team) { return team.some(function (p) { return p && p.you; }); });
-      const paidKey = 'rbxwin_paid_' + b.seed;
+      const paidKey = 'rbxwin_paid_' + b.id;
       let alreadyPaid = false;
       try { alreadyPaid = !!localStorage.getItem(paidKey); } catch (e) {}
       if (battleHasMe && !alreadyPaid) {
@@ -2121,7 +2018,7 @@ function renderLive(b) {
         if (countEl) countEl.hidden = true;
         b._counting = false;
         b.played = true;
-        seenMark(b.seed);
+        seenMark(b.id);
         beginRound();
       }, 800));
     }
@@ -2399,7 +2296,7 @@ function renderLive(b) {
     systemMsg('Battle finished - ' + names + ' won ' + fmt(share) + '!');
     Api.completeBattle(b.id);
     finishedBattles[b.id] = { b: b, totals: totals.slice(), bags: bags.map(function (x) { return x.slice(); }), winners: winners, share: share };
-    try { localStorage.setItem('rbxwin_paid_' + b.seed, '1'); } catch (e) {}
+    try { localStorage.setItem('rbxwin_paid_' + b.id, '1'); } catch (e) {}
     const userWon = winners.some(function (p) { return p.you; });
     if (battleHasUser(b)) {
       if (userWon) {
@@ -2516,67 +2413,21 @@ function renderLive(b) {
         if (!it.token) updateLastPull(i, it);
         if (it.token) {
           pending++;
-          AudioFX.gold();
           var strip = document.getElementById('pstrip' + i);
-          // the reel is [won items] + [16 filler] + [landed item] + [3 tail
-          // filler] — the landed card is 4th from the end, NOT lastElementChild
-          // (that was grabbing a tail filler card, which almost never had a
-          // model-viewer on it, so the token spin silently no-op'd and jumped
-          // straight to the good-item reel)
-          var landedCard = strip && strip.children[strip.children.length - 4];
-          if (landedCard) landedCard.classList.add('token-hit');
-          var modelEl = landedCard && landedCard.querySelector('model-viewer');
-          spinTokenModel(modelEl, 1.9, function () {
-            // hold on the settled gold token for a beat before it dumps into
-            // the good-item reel — gives the win a second to register instead
-            // of instantly cutting away
-            liveTimers.push(setTimeout(function () {
-              goldContinue(i, it, function () { pending--; advance(); });
-            }, 350));
-          });
+          var cards = strip.querySelectorAll('.mini-item');
+          var last = cards[cards.length - 1];
+          if (last) last.classList.add('token-hit');
+          AudioFX.gold();
+          // let the coin finish its flip before the reel starts spinning
+          liveTimers.push(setTimeout(function () {
+            goldContinue(i, it, function () { pending--; advance(); });
+          }, 550));
           return;
         }
         addLoot(i, it);
       });
       advance();
     }, 5350));
-  };
-
-  // spins a token's own 3D model in place — fast start, easing down to a
-  // stop — right on the card that just landed, no separate overlay.
-  //
-  // NOTE: this used to drive model-viewer's own `.orientation` property,
-  // but that depends on the model having finished loading and on
-  // model-viewer's internal reactivity actually picking up the change —
-  // which was unreliable here and is why it only ever looked like a small
-  // "pop" (that's the .token-hit CSS pop/glow, a separate effect) instead
-  // of an actual spin. Driving a plain CSS `rotateY` transform on the
-  // element itself sidesteps all of that: it's a normal DOM transform, it
-  // renders immediately regardless of model load state, and it's not
-  // dependent on any model-viewer internals working correctly.
-  const spinTokenModel = function (modelEl, duration, cb) {
-    if (!modelEl) { cb(); return; }
-    var spins = 6;
-    var wrap = modelEl.parentElement;
-    if (wrap) wrap.style.perspective = '600px';
-    modelEl.style.transformStyle = 'preserve-3d';
-    modelEl.style.backfaceVisibility = 'visible';
-    modelEl.style.willChange = 'transform';
-    var start = performance.now();
-    var durMs = duration * 1000;
-    var ease = function (t) { return 1 - Math.pow(1 - t, 3); };
-    var step = function () {
-      if (!alive()) { cb(); return; }
-      var t = Math.min(1, (performance.now() - start) / durMs);
-      var deg = spins * 360 * ease(t);
-      modelEl.style.transform = 'rotateY(' + deg + 'deg)';
-      // also keep nudging the model's own internal orientation, in case
-      // model-viewer picks it up — harmless bonus, not load-bearing
-      try { modelEl.orientation = '0deg 0deg ' + deg + 'deg'; } catch (e) {}
-      if (t < 1) liveTimers.push(setTimeout(step, 16));
-      else liveTimers.push(setTimeout(cb, 150));
-    };
-    step();
   };
 
   // gold spin: the token holder's reel keeps spinning down into the good items
@@ -2757,7 +2608,7 @@ if (document.readyState === 'loading') {
     setTimeout(() => document.getElementById('tipAmount').focus(), 120);
   }
 
-  document.getElementById('tipSubmit').addEventListener('click', async () => {
+  document.getElementById('tipSubmit').addEventListener('click', () => {
     if (!tipTarget) return;
     if (!currentUser) { openAuth('signin'); toast('Sign in to tip!'); return; }
     if (tipTarget === currentUser.name) { toast("You cannot tip yourself — it's a scam if someone asks!"); return; }
@@ -2765,25 +2616,15 @@ if (document.readyState === 'loading') {
     if (!amt || amt <= 0) { toast('Enter a tip amount first'); return; }
     const stored = Math.round((amt / 0.002) * 100) / 100;
     if (currentUser.balance < stored) { toast('Not enough coins — deposit first!'); openDeposit(); return; }
-    const submitBtn = document.getElementById('tipSubmit');
-    submitBtn.disabled = true;
-    try {
-      // Credit the recipient on the shared server FIRST — their balance
-      // lives in their own browser's storage, not ours, so this is the
-      // only way the coins actually reach them. Only deduct locally once
-      // that succeeds, so a failed/unknown tip never disappears.
-      await Api.tip(tipTarget, stored);
-      setBalance(currentUser.balance - stored);
-      addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!' });
-      toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
-      tipModal.classList.remove('open');
-    } catch (e) {
-      toast(e.message === 'recipient not found'
-        ? `${tipTarget} hasn't signed in on this server yet — ask them to sign up first.`
-        : 'Tip failed — check the server and try again.');
-    } finally {
-      submitBtn.disabled = false;
+    setBalance(currentUser.balance - stored);
+    const u = store.users()[tipTarget];
+    if (u) {
+      u.balance = Math.round(((u.balance || 0) + stored) * 100) / 100;
+      store.saveUsers(store.users());
     }
+    addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!' });
+    toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
+    tipModal.classList.remove('open');
   });
 
   // close paths
@@ -2927,6 +2768,7 @@ if (document.readyState === 'loading') {
     renderMults();
     if (picks >= tiles() - mines) cashout(); // cleared the whole board
   });
+
 
   // bet quick buttons — same units as blackjack
   document.querySelectorAll('.mn-quick button').forEach((btn) => btn.addEventListener('click', () => {

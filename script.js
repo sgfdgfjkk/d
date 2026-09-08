@@ -251,13 +251,29 @@ function loadSession() {
   // you were away, or from another device, show up) — refresh once we can.
   if (name) {
     Api.getUser(name).then((fresh) => {
-      if (fresh && currentUser && currentUser.name === name && fresh.balance !== currentUser.balance) {
-        currentUser.balance = fresh.balance;
-        cacheUserLocally();
-        renderBalance(true);
+      if (!currentUser || currentUser.name !== name) return;
+      if (fresh) {
+        if (fresh.balance !== currentUser.balance) {
+          currentUser.balance = fresh.balance;
+          cacheUserLocally();
+          renderBalance(true);
+        }
+      } else {
+        // this browser was "logged in" locally but the server has no matching
+        // account (data file reset, different server, etc.) — every authenticated
+        // action would silently fail as "invalid credentials", so log out cleanly
+        // instead of leaving the UI stuck pretending you're signed in.
+        forceLogout("You were signed out — this browser's saved login no longer matches an account on the server. Please sign in or sign up again.");
       }
     }).catch(() => {});
   }
+}
+
+function forceLogout(message) {
+  currentUser = null;
+  store.setSession(null);
+  renderNav();
+  if (message) toast(message);
 }
 
 // updates the local cache only — used when mirroring a value we already got
@@ -282,10 +298,15 @@ async function pollBalance() {
   if (!currentUser) return;
   try {
     const fresh = await Api.getUser(currentUser.name);
-    if (fresh && currentUser && fresh.balance !== currentUser.balance) {
-      currentUser.balance = fresh.balance;
-      cacheUserLocally();
-      renderBalance(true);
+    if (!currentUser) return;
+    if (fresh) {
+      if (fresh.balance !== currentUser.balance) {
+        currentUser.balance = fresh.balance;
+        cacheUserLocally();
+        renderBalance(true);
+      }
+    } else {
+      forceLogout("You were signed out — this browser's saved login no longer matches an account on the server. Please sign in or sign up again.");
     }
   } catch (e) {}
 }
@@ -2916,7 +2937,7 @@ if (document.readyState === 'loading') {
     } catch (e) {
       if (e.message === 'recipient not found') toast(tipTarget + " doesn't have an account here yet.");
       else if (e.message === 'insufficient balance') { toast('Not enough coins — deposit first!'); openDeposit(); }
-      else if (e.message === 'invalid credentials') toast('Tip failed — your saved password no longer matches your account. Try logging out and back in.');
+      else if (e.message === 'invalid credentials') forceLogout('Your saved login no longer matches an account on the server — please sign in or sign up again.');
       else if (e instanceof TypeError) toast('Tip failed — check that serve.py is running.');
       else toast('Tip failed: ' + (e.message || 'unknown error'));
     } finally {

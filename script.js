@@ -900,7 +900,6 @@ function renderNav() {
           <span class="chev-svg"><svg viewBox="0 0 24 24" width="10" height="10"><use href="#chev-d"></use></svg></span>
         </button>
         <div class="dropdown user-dropdown" id="userDropdown">
-          <a href="#" id="depositLink"><svg class="d-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#coin"></use></svg> Deposit</a>
           <a href="#" id="logoutLink"><svg class="d-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#exit"></use></svg> Log out</a>
         </div>
       </div>`;
@@ -910,7 +909,6 @@ function renderNav() {
       e.stopPropagation();
       $('#userDropdown').classList.toggle('open');
     });
-    $('#depositLink').addEventListener('click', (e) => { e.preventDefault(); openDeposit(); });
     $('#logoutLink').addEventListener('click', (e) => {
       e.preventDefault();
       currentUser = null;

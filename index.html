@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBXWIN — Play & Win</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%232f80ff'/%3E%3Ccircle cx='32' cy='32' r='23' fill='none' stroke='rgba(255,255,255,.35)' stroke-width='2'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='28' font-weight='900' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<link rel="stylesheet" href="style.css?v=91">
+</head>
+<body>
+
+<!-- shared SVG artwork -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="flag" viewBox="0 0 24 24">
+    <rect x="4" y="2" width="2.2" height="20" rx="1" fill="#eef3ff"/>
+    <rect x="6.2" y="3" width="14" height="8" fill="rgba(238,243,255,.28)"/>
+    <rect x="6.2" y="3" width="3.5" height="4" fill="#eef3ff"/>
+    <rect x="13.2" y="3" width="3.5" height="4" fill="#eef3ff"/>
+    <rect x="9.7" y="7" width="3.5" height="4" fill="#eef3ff"/>
+    <rect x="16.7" y="7" width="3.5" height="4" fill="#eef3ff"/>
+  </symbol>
+  <symbol id="flag-mini" viewBox="0 0 32 32">
+    <rect x="6" y="4" width="2.5" height="24" rx="1" fill="#eef3ff"/>
+    <rect x="8.5" y="4" width="19" height="10" fill="rgba(255,255,255,.25)"/>
+    <rect x="8.5" y="4" width="4.75" height="5" fill="#eef3ff"/>
+    <rect x="18" y="4" width="4.75" height="5" fill="#eef3ff"/>
+    <rect x="13.25" y="9" width="4.75" height="5" fill="#eef3ff"/>
+    <rect x="22.75" y="9" width="4.75" height="5" fill="#eef3ff"/>
+  </symbol>
+  <symbol id="gamepad" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M7 7.5h10a5 5 0 0 1 5 5c0 2.5-1.6 4.5-3.8 4.5-1.3 0-2.4-.7-3.1-1.7l-.5-.8H9.4l-.5.8C8.2 16.3 7.1 17 5.8 17 3.6 17 2 15 2 12.5a5 5 0 0 1 5-5Zm1.5 2v1.5H7v1.6h1.5V14h1.6v-1.4h1.5v-1.6h-1.5V9.5H8.5Zm8.3.3a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Zm-2.7 2.6a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z"/>
+  </symbol>
+  <symbol id="bubble" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M4 3h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-9.6L6 21v-4H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/>
+  </symbol>
+  <symbol id="coin" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" fill="#2f80ff"/>
+    <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.3"/>
+    <circle cx="12" cy="12" r="7.4" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+    <text x="12" y="16.3" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="900" fill="#ffffff">$</text>
+  </symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.5 5 5 10-11"/></symbol>
+  <symbol id="goldtoken" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="11" fill="#8a5a00"/>
+    <circle cx="12" cy="12" r="10" fill="#ffd700"/>
+    <circle cx="12" cy="12" r="7.4" fill="#f0b429"/>
+    <path d="M12 5.4 A6.8 6.8 0 0 0 5.6 9.8" stroke="#fff8dc" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    <path fill="#8a5a00" d="M12 7.6 13.3 10.7 16.4 11 14 13.2 14.7 16.2 12 14.5 9.3 16.2 10 13.2 7.6 11 10.7 10.7 Z"/>
+    <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(110,65,0,.45)" stroke-width="1.2"/>
+  </symbol>
+  <symbol id="hex" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.1" d="M12 2 20 6.5 V17.5 L12 22 4 17.5 V6.5 Z"/></symbol>
+  <symbol id="hex" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.1" d="M12 2 20 6.5 V17.5 L12 22 4 17.5 V6.5 Z"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24">
+    <path d="M8 10V8a4 4 0 1 1 8 0v2" stroke="#33507c" stroke-width="2.6" fill="none"/>
+    <rect x="5" y="10" width="14" height="10" rx="2.5" fill="#33507c"/>
+  </symbol>
+  <symbol id="users" viewBox="0 0 24 24"><path fill="currentColor" d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-3.3 0-6 2.2-6 5v2h12v-2c0-2.8-2.7-5-6-5Zm7.5-2a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm.5 2c-.7 0-1.4.1-2 .3 1.5 1.1 2.5 2.8 2.5 4.7v2H22v-2c0-2.8-2.2-5-5-5Z"/></symbol>
+  <symbol id="bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></symbol>
+  <symbol id="diamond" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 22 12 12 22 2 12 12 2Z"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 20 5v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3Z"/></symbol>
+  <symbol id="target" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18Z"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><path fill="currentColor" d="M10 3a7 7 0 1 0 4.4 12.4l4.6 4.6 1.4-1.4-4.6-4.6A7 7 0 0 0 10 3Zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z"/></symbol>
+  <symbol id="chev-d" viewBox="0 0 24 24"><path fill="currentColor" d="m6 9 6 6 6-6H6Z"/></symbol>
+  <symbol id="exit" viewBox="0 0 24 24"><path fill="currentColor" d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5V3Zm4.6 4L13.2 8.4 15.8 11H8v2h7.8l-2.6 2.6 1.4 1.4 5-5-5-5Z"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></symbol>
+  <symbol id="crown" viewBox="0 0 24 24"><path fill="currentColor" d="M3 7.5 7.6 11 12 4.5 16.4 11 21 7.5 19.4 18H4.6L3 7.5Zm1.8 12h14.4v2H4.8v-2Z"/></symbol>
+  <symbol id="gem" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5 20 9l-8 12.5L4 9l8-6.5Zm0 3.1L7.2 9.2 12 17l4.8-7.8L12 5.6Z"/></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2 2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 16.9 6.1 20.2l1.3-6.6L2.5 9l6.6-.8L12 2Z"/></symbol>
+  <symbol id="sword" viewBox="0 0 80 80">
+    <path d="M40 2 L44 10 L43 50 L37 50 L36 10 Z" fill="#e6ecf9"/>
+    <path d="M40 2 L44 10 L43 50 L40 50 Z" fill="#c3cfe4"/>
+    <rect x="31" y="50" width="18" height="5" rx="2.5" fill="#93a5c9"/>
+    <rect x="37.5" y="55" width="5" height="13" rx="2" fill="#5f6f94"/>
+    <circle cx="40" cy="71" r="3.6" fill="#93a5c9"/>
+  </symbol>
+  <symbol id="swordsX" viewBox="0 0 512 512">
+    <!-- "Crossed Swords" by Lorc — game-icons.net (CC BY 3.0) -->
+    <path fill="currentColor" d="M19.75 14.438c59.538 112.29 142.51 202.35 232.28 292.718l3.626 3.75.063-.062c21.827 21.93 44.04 43.923 66.405 66.25-18.856 14.813-38.974 28.2-59.938 40.312l28.532 28.53 68.717-68.717c42.337 27.636 76.286 63.646 104.094 105.81l28.064-28.06c-42.47-27.493-79.74-60.206-106.03-103.876l68.936-68.938-28.53-28.53c-11.115 21.853-24.413 42.015-39.47 60.593-43.852-43.8-86.462-85.842-130.125-125.47-.224-.203-.432-.422-.656-.625C183.624 122.75 108.515 63.91 19.75 14.437zm471.875 0c-83.038 46.28-154.122 100.78-221.97 161.156l22.814 21.562 56.81-56.812 13.22 13.187-56.438 56.44 24.594 23.186c61.802-66.92 117.6-136.92 160.97-218.72zm-329.53 125.906l200.56 200.53c-4.36 4.443-8.84 8.793-13.405 13.032L148.875 153.53l13.22-13.186zm-76.69 113.28l-28.5 28.532 68.907 68.906c-26.29 43.673-63.53 76.414-106 103.907l28.063 28.06c27.807-42.164 61.758-78.174 104.094-105.81l68.718 68.717 28.53-28.53c-20.962-12.113-41.08-25.5-59.937-40.313 17.865-17.83 35.61-35.433 53.157-52.97l-24.843-25.655-55.47 55.467c-4.565-4.238-9.014-8.62-13.374-13.062l55.844-55.844-24.53-25.374c-18.28 17.856-36.602 36.06-55.158 54.594-15.068-18.587-28.38-38.758-39.5-60.625z"/>
+  </symbol>
+  <symbol id="swordGold" viewBox="0 0 80 80">
+    <path d="M40 2 L44 10 L43 50 L37 50 L36 10 Z" fill="#ffe28a"/>
+    <path d="M40 2 L44 10 L43 50 L40 50 Z" fill="#f0b429"/>
+    <rect x="31" y="50" width="18" height="5" rx="2.5" fill="#3a6fe0"/>
+    <rect x="37.5" y="55" width="5" height="13" rx="2" fill="#2650a8"/>
+    <circle cx="40" cy="71" r="3.6" fill="#3a6fe0"/>
+  </symbol>
+  <symbol id="swordsGoldX" viewBox="0 0 80 80">
+    <use href="#swordGold" transform="rotate(45 40 40)"/>
+    <use href="#swordGold" transform="rotate(-45 40 40)"/>
+  </symbol>
+  <symbol id="chest" viewBox="0 0 120 96">
+    <defs>
+      <radialGradient id="chestGlow" cx="50%" cy="100%" r="65%">
+        <stop offset="0%" stop-color="var(--glowc, #ffffff)" stop-opacity=".85"/>
+        <stop offset="100%" stop-color="var(--glowc, #ffffff)" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="chestLid" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,.32)"/>
+        <stop offset="45%" stop-color="rgba(255,255,255,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,.25)"/>
+      </linearGradient>
+      <linearGradient id="chestBody" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,.26)"/>
+        <stop offset="35%" stop-color="rgba(255,255,255,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,.38)"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="89" rx="42" ry="5" fill="rgba(0,0,0,.45)"/>
+    <rect x="24" y="46" width="72" height="10" rx="5" fill="url(#chestGlow)" opacity=".75"/>
+    <path d="M15 45 Q15 9 60 9 Q105 9 105 45 L105 47 L15 47 Z" fill="var(--lid)"/>
+    <path d="M15 45 Q15 9 60 9 Q105 9 105 45 L105 47 L15 47 Z" fill="url(#chestLid)"/>
+    <path d="M37 12 V40 M60 9.5 V40 M83 12 V40" stroke="rgba(0,0,0,.16)" stroke-width="3" fill="none"/>
+    <path d="M25 21 Q33 13 47 11" stroke="rgba(255,255,255,.65)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M95 21 Q90 14 82 11.5" stroke="rgba(255,255,255,.35)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <rect x="13" y="40" width="94" height="10" rx="3" fill="var(--trim)"/>
+    <rect x="13" y="40" width="94" height="3" rx="1.5" fill="rgba(255,255,255,.4)"/>
+    <rect x="13" y="47" width="94" height="3" fill="rgba(0,0,0,.3)"/>
+    <rect x="17" y="50" width="86" height="34" rx="6" fill="var(--body)"/>
+    <rect x="17" y="50" width="86" height="34" rx="6" fill="url(#chestBody)"/>
+    <path d="M17 74 h86 v4 a6 6 0 0 1 -6 6 H23 a6 6 0 0 1 -6 -6 Z" fill="var(--dark)"/>
+    <rect x="17" y="50" width="86" height="4" rx="2" fill="rgba(255,255,255,.25)"/>
+    <rect x="27" y="50" width="11" height="34" fill="var(--trim)"/>
+    <rect x="82" y="50" width="11" height="34" fill="var(--trim)"/>
+    <rect x="27" y="50" width="3.5" height="34" fill="rgba(255,255,255,.3)"/>
+    <rect x="82" y="50" width="3.5" height="34" fill="rgba(255,255,255,.3)"/>
+    <circle cx="32.5" cy="56" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <circle cx="32.5" cy="78" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <circle cx="87.5" cy="56" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <circle cx="87.5" cy="78" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <rect x="50" y="42" width="20" height="16" rx="3.5" fill="var(--trim)" stroke="var(--dark)" stroke-width="2"/>
+    <circle cx="60" cy="49" r="2.4" fill="var(--dark)"/>
+    <rect x="58.6" y="51" width="2.8" height="4.5" rx="1.4" fill="var(--dark)"/>
+    <circle cx="60" cy="49" r="5.5" fill="none" stroke="var(--glowc, #ffffff)" stroke-opacity=".5" stroke-width="1.6"/>
+  </symbol>
+  <symbol id="chestBase" viewBox="0 0 120 96">
+    <ellipse cx="60" cy="89" rx="42" ry="5" fill="rgba(0,0,0,.45)"/>
+    <rect x="17" y="50" width="86" height="34" rx="6" fill="var(--body)"/>
+    <rect x="17" y="50" width="86" height="34" rx="6" fill="url(#chestBody)"/>
+    <path d="M17 74 h86 v4 a6 6 0 0 1 -6 6 H23 a6 6 0 0 1 -6 -6 Z" fill="var(--dark)"/>
+    <rect x="17" y="50" width="86" height="4" rx="2" fill="rgba(255,255,255,.25)"/>
+    <rect x="27" y="50" width="11" height="34" fill="var(--trim)"/>
+    <rect x="82" y="50" width="11" height="34" fill="var(--trim)"/>
+    <rect x="27" y="50" width="3.5" height="34" fill="rgba(255,255,255,.3)"/>
+    <rect x="82" y="50" width="3.5" height="34" fill="rgba(255,255,255,.3)"/>
+    <circle cx="32.5" cy="56" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <circle cx="32.5" cy="78" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <circle cx="87.5" cy="56" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <circle cx="87.5" cy="78" r="1.6" fill="rgba(0,0,0,.28)"/>
+    <rect x="24" y="46" width="72" height="9" rx="4.5" fill="url(#chestGlow)" opacity=".9"/>
+  </symbol>
+  <symbol id="chestLid" viewBox="0 0 120 96">
+    <path d="M15 45 Q15 9 60 9 Q105 9 105 45 L105 47 L15 47 Z" fill="var(--lid)"/>
+    <path d="M15 45 Q15 9 60 9 Q105 9 105 45 L105 47 L15 47 Z" fill="url(#chestLid)"/>
+    <path d="M37 12 V40 M60 9.5 V40 M83 12 V40" stroke="rgba(0,0,0,.16)" stroke-width="3" fill="none"/>
+    <path d="M25 21 Q33 13 47 11" stroke="rgba(255,255,255,.65)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M95 21 Q90 14 82 11.5" stroke="rgba(255,255,255,.35)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <rect x="13" y="40" width="94" height="10" rx="3" fill="var(--trim)"/>
+    <rect x="13" y="40" width="94" height="3" rx="1.5" fill="rgba(255,255,255,.4)"/>
+    <rect x="13" y="47" width="94" height="3" fill="rgba(0,0,0,.3)"/>
+    <rect x="50" y="42" width="20" height="16" rx="3.5" fill="var(--trim)" stroke="var(--dark)" stroke-width="2"/>
+    <circle cx="60" cy="49" r="2.4" fill="var(--dark)"/>
+    <rect x="58.6" y="51" width="2.8" height="4.5" rx="1.4" fill="var(--dark)"/>
+  </symbol>
+  <symbol id="swordX" viewBox="0 0 80 80">
+    <defs>
+      <linearGradient id="swBlade" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f4f8ff"/>
+        <stop offset="50%" stop-color="#c9d8f5"/>
+        <stop offset="100%" stop-color="#8fa8d8"/>
+      </linearGradient>
+    </defs>
+    <g transform="rotate(45 40 40)">
+      <rect x="37.5" y="4" width="5" height="40" rx="2" fill="url(#swBlade)"/>
+      <path d="M40 4 L42.5 8 L40 14 L37.5 8 Z" fill="#ffffff"/>
+      <rect x="30" y="44" width="20" height="4.5" rx="2.2" fill="#2f80ff"/>
+      <rect x="37.8" y="48.5" width="4.4" height="10" rx="2" fill="#1b5fd6"/>
+      <circle cx="40" cy="61" r="3.4" fill="#4f9aff"/>
+      <path d="M39.2 60 L40 57.6 L40.8 60 L40 63 Z" fill="#dfe9ff"/>
+    </g>
+  </symbol>
+  <symbol id="spark" viewBox="0 0 40 40">
+    <path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#eef3ff"/>
+  </symbol>
+  <symbol id="cardicon" viewBox="0 0 24 24">
+    <rect x="4.5" y="2" width="15" height="20" rx="3" fill="#ffffff"/>
+    <path d="M12 7.5 L16 13 L12 18.5 L8 13 Z" fill="#e33b3b"/>
+  </symbol>
+  <symbol id="bot" viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="11" rx="3" fill="currentColor"/><rect x="10" y="2.5" width="4" height="4.5" rx="2" fill="currentColor"/><rect x="11" y="6.5" width="2" height="3" fill="currentColor"/><circle cx="9.5" cy="14.5" r="1.8" fill="#0d1628"/><circle cx="14.5" cy="14.5" r="1.8" fill="#0d1628"/><rect x="1.5" y="12" width="2.5" height="5" rx="1.25" fill="currentColor"/><rect x="20" y="12" width="2.5" height="5" rx="1.25" fill="currentColor"/><path d="M9 18h6" stroke="#0d1628" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="send" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M3.4 20.6 21.8 12 3.4 3.4 3.3 10l13 2-13 2z"/>
+  </symbol>
+  <symbol id="casebox" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10 3h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2Zm-.8 1.8v1.4h5.6V4.8H9.2ZM8.6 12.2v-1.6h6.8v1.6H8.6Z"/></symbol>
+  <symbol id="lvlup" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.6 19 9.4h-4.2v2.9H9.2V9.4H5L12 2.6Zm0 8.9 7 6.8h-4.2v2.9H9.2v-2.9H5l7-6.8Z"/></symbol>
+  <symbol id="trend" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" d="m3 17.2 6.4-6.4 4 4 7.4-7.4"/><path fill="currentColor" d="M21.9 12.6V6h-6.6l6.6 6.6Z"/></symbol>
+  <symbol id="spin" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3.6 15.2a8.6 8.6 0 1 0 2-9.5L2.2 9.3M2.2 3.9v5.4h5.4"/></symbol>
+  <symbol id="wheel" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="2.1" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 3.4V9.6M12 14.4v6.2M3.4 12H9.6M14.4 12h6.2"/></symbol>
+  <symbol id="bomb" viewBox="0 0 24 24"><circle cx="10" cy="13.8" r="6.6" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="m14.6 9.2 2.5-2.5"/><path fill="currentColor" d="m19.4 2.6.95 1.85 1.85.95-1.85.95-.95 1.85-.95-1.85-1.85-.95 1.85-.95.95-1.85Z"/></symbol>
+  <symbol id="updown" viewBox="0 0 24 24"><path fill="currentColor" d="m8.2 2.6 3.6 3.6H9.6v11.6H6.8V6.2H4.6l3.6-3.6Z"/><path fill="currentColor" d="m15.8 21.4-3.6-3.6h2.2V6.2h2.8v11.6h2.2l-3.6 3.6Z"/></symbol>
+  <symbol id="rook" viewBox="0 0 24 24"><path fill="currentColor" d="M5.6 2.8h2.9v2.2h2.1V2.8h2.8v2.2h2.1V2.8h2.9v5.4L16.6 10v6.3l1.8 1.7v3.2H5.6v-3.2l1.8-1.7V10L5.6 8.2V2.8Z"/></symbol>
+  <symbol id="gift" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v11z"/></symbol>
+  <symbol id="hammer" viewBox="0 0 24 24"><g fill="currentColor" transform="rotate(45 16 8)"><rect x="11.5" y="5.4" width="9" height="5.2" rx="1.2"/></g><rect fill="currentColor" x="-1.3" y="-6.4" width="2.6" height="12.8" rx="1.3" transform="translate(9.5 14.5) rotate(45)"/></symbol>
+  <symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="12" cy="12" rx="4.1" ry="8.8" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3.4 12h17.2M4.6 7.4h14.8M4.6 16.6h14.8"/></symbol>
+  <symbol id="trophy" viewBox="0 0 24 24"><path fill="currentColor" d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></symbol>
+  <symbol id="chev-r" viewBox="0 0 24 24"><path fill="currentColor" d="m9.2 4.8 7.2 7.2-7.2 7.2-1.7-1.7 5.5-5.5-5.5-5.5 1.7-1.7Z"/></symbol>
+  <symbol id="raincloud" viewBox="0 0 28 28"><path fill="currentColor" d="M21.35 10.04A7.49 7.49 0 0 0 14 4c-2.89 0-5.4 1.64-6.65 4.04A5.994 5.994 0 0 0 2 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/><path fill="currentColor" d="M10 24.5c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.3 2-3.6 2-3.6s2 2.3 2 3.6zm6 0c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.3 2-3.6 2-3.6s2 2.3 2 3.6zm6 0c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.3 2-3.6 2-3.6s2 2.3 2 3.6z"/></symbol>
+  <symbol id="ticket" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"/></symbol>
+  <symbol id="gift2" viewBox="0 0 24 24">
+    <path fill="#b38dff" d="M12 5.9c-.7-1.2-1.7-2.2-3-2.2a2.5 2.5 0 0 0 0 5h2.2L12 5.9Zm3 0c.7-1.2 1.7-2.2 3-2.2a2.5 2.5 0 0 1 0 5h-2.2L15 5.9Z"/>
+    <path fill="#8a5ae0" d="M3.5 9.5h17a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-17a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/>
+    <path fill="#8a5ae0" d="M5 14.5h14v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-5Z"/>
+    <path fill="#c9b0ff" d="M11 9.5h2v12h-2z"/>
+  </symbol>
+  <symbol id="raincloud2" viewBox="0 0 28 28">
+    <path fill="#9db4d8" d="M21.35 10.04A7.49 7.49 0 0 0 14 4c-2.89 0-5.4 1.64-6.65 4.04A5.994 5.994 0 0 0 2 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+    <path fill="#4da3ff" d="M10 24.5c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.3 2-3.6 2-3.6s2 2.3 2 3.6zm6 0c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.3 2-3.6 2-3.6s2 2.3 2 3.6zm6 0c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.3 2-3.6 2-3.6s2 2.3 2 3.6z"/>
+  </symbol>
+  <symbol id="ticket2" viewBox="0 0 24 24"><path fill="#e33b3b" fill-rule="evenodd" d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"/></symbol>
+  <symbol id="racecar" viewBox="0 0 24 48">
+    <!-- top-down race car, facing up -->
+    <rect x="8" y="1" width="8" height="4" rx="2" fill="#9cc3ff"/>
+    <rect x="10.4" y="4" width="3.2" height="26" rx="1.6" fill="#e6edff"/>
+    <rect x="6.4" y="10" width="3" height="7.5" rx="1.4" fill="#22314f"/>
+    <rect x="14.6" y="10" width="3" height="7.5" rx="1.4" fill="#22314f"/>
+    <rect x="6.4" y="27" width="3" height="9" rx="1.4" fill="#22314f"/>
+    <rect x="14.6" y="27" width="3" height="9" rx="1.4" fill="#22314f"/>
+    <rect x="5.5" y="39" width="13" height="5.5" rx="2.2" fill="#2f80ff"/>
+    <rect x="7.5" y="40" width="9" height="1.6" rx=".8" fill="#9cc3ff" opacity=".8"/>
+    <circle cx="12" cy="19" r="2.6" fill="#0e1b34" stroke="#8fc1ff" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="heli" viewBox="0 0 72 44">
+    <!-- side-view helicopter, facing right -->
+    <rect x="32" y="16.5" width="27" height="5" rx="2.5" fill="#7ab6ff"/>
+    <path d="M57 7l7 9.5h-9z" fill="#5aa2ff"/>
+    <path d="M12 12c9-6.5 20-5.5 25 .5l-2.5 13.5c-6 4.5-17 4.5-23 .5z" fill="#2f80ff"/>
+    <path d="M14 13.5c6.5-4 14.5-3.5 18.5.5l-1.2 4.5c-5.5-2.5-12-2.5-16.5 0z" fill="#bfe0ff"/>
+    <path d="M13 32.5h23" stroke="#22314f" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <path d="M15 27.5v5M31 27.5v5" stroke="#22314f" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <rect x="21.5" y="6.5" width="3" height="6" fill="#22314f"/>
+  </symbol>
+  <symbol id="eye" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/>
+    <circle cx="12" cy="12" r="2.7" fill="currentColor"/>
+  </symbol>
+</defs></svg>
+
+<header class="navbar">
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href="#/home" class="logo">
+        <svg class="logo-flag" viewBox="0 0 24 24" width="21" height="21"><use href="#flag"/></svg>
+        <span class="logo-text">RBX<span class="logo-accent">WIN</span></span>
+      </a>
+      <nav class="games-nav">
+        <button class="games-btn" id="gamesBtn">
+          <svg class="nav-ico" viewBox="0 0 24 24" width="17" height="17"><use href="#gamepad"/></svg>
+          Games <svg class="chev-svg" viewBox="0 0 24 24" width="10" height="10"><use href="#chev-d"/></svg>
+        </button>
+        <div class="dropdown" id="gamesDropdown">
+          <a href="#/case-battles"><svg class="d-ico" viewBox="0 0 80 80" width="15" height="15"><use href="#swordsX"/></svg> Case Battles</a>
+          <a href="#"><svg class="d-ico chest gold" viewBox="0 0 120 96" width="16" height="13"><use href="#chest"/></svg> Cases</a>
+          <a href="#"><svg class="d-ico" viewBox="0 0 24 24" width="15" height="15"><use href="#cardicon"/></svg> Blackjack</a>
+          <a href="#"><svg class="d-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg> Coinflip</a>
+          <a href="#" class="locked"><svg class="d-ico" viewBox="0 0 24 24" width="13" height="13"><use href="#lock"/></svg> Limbo</a>
+          <a href="#" class="locked"><svg class="d-ico" viewBox="0 0 24 24" width="13" height="13"><use href="#lock"/></svg> Slide</a>
+          <a href="#" class="locked"><svg class="d-ico" viewBox="0 0 24 24" width="13" height="13"><use href="#lock"/></svg> Mines</a>
+        </div>
+      </nav>
+    </div>
+    <div class="nav-balance-slot" id="navBalanceSlot"><!-- rendered by script.js --></div>
+    <div class="nav-auth" id="navAuth"><!-- rendered by script.js --></div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- ============ NAV RAIL (left sidebar) ============ -->
+  <aside class="navrail" id="navrail" aria-label="Site navigation">
+    <div class="rail-road" aria-hidden="true">
+      <svg class="rail-car" viewBox="0 0 24 48"><use href="#racecar"/></svg>
+    </div>
+    <div class="rail-road right" aria-hidden="true">
+      <svg class="rail-car rev" viewBox="0 0 24 48"><use href="#racecar"/></svg>
+    </div>
+    <div class="navrail-mid">
+      <div class="navrail-label">Games</div>
+      <nav class="navrail-group">
+        <a class="navrail-item" data-key="case-battles" href="#/case-battles"><svg class="nr-ico" viewBox="0 0 24 24" width="17" height="17"><use href="#swordsX"/></svg>Case Battles</a>
+        <a class="navrail-item" href="#/home"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#casebox"/></svg>Cases</a>
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#lvlup"/></svg>Upgrader</a>
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#trend"/></svg>Crash</a>
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#spin"/></svg>Double</a>
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#wheel"/></svg>Roll</a>
+        <a class="navrail-item" data-key="mines" href="#/mines"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#bomb"/></svg>Mines</a>
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#updown"/></svg>Limbo</a>
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#rook"/></svg>Towers</a>
+      </nav>
+      <div class="navrail-label">General</div>
+      <nav class="navrail-group">
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#gift"/></svg>Rewards</a>
+        <a class="navrail-item" data-key="create-battle" href="#/create-battle"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#hammer"/></svg>Case Creator</a>
+        <a class="navrail-item" href="#"><svg class="nr-ico" viewBox="0 0 24 24" width="16" height="16"><use href="#globe"/></svg>Affiliates</a>
+      </nav>
+    </div>
+    <div class="navrail-brand" aria-hidden="true">
+      <svg class="navrail-flag" viewBox="0 0 24 24" width="15" height="15"><use href="#flag"/></svg>
+      <span class="navrail-logo">RBX<span>WIN</span></span>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- ============ HOME VIEW ============ -->
+    <section id="view-home">
+      <!-- discord strip -->
+      <section class="discord-strip">
+        <div class="ds-txt">
+          <b><span class="ds-hl">HUGE</span> Giveaways, Promos &amp; Events • 3,000+ in Weekly Prizes</b>
+          <p><svg viewBox="0 0 24 24" width="13" height="13"><use href="#users"/></svg> 13,000 joined and still growing…</p>
+        </div>
+        <div class="ds-dominus" aria-hidden="true">
+          <model-viewer class="ds-dominus-model" src="models/dominus_frigidus.glb" alt="Dominus Frigidus"
+            auto-rotate auto-rotate-delay="0" rotation-per-second="120deg"
+            camera-orbit="0deg 75deg 105%" field-of-view="28deg" interaction-prompt="none"
+            disable-zoom shadow-intensity="0" exposure="1.1"></model-viewer>
+        </div>
+        <a class="btn ds-btn" href="#"><img class="ds-btn-ico" src="img/discord-3d.png" alt="">Join Discord</a>
+        <div class="mascot ds-mascot"><span class="eye left"></span><span class="eye right"></span></div>
+      </section>
+
+      <!-- live feed -->
+      <section class="feed-row">
+        <span class="feed-chip"><i></i> LIVE FEED</span>
+        <div class="feed-clip">
+          <div class="feed-cards" id="liveFeed"></div>
+        </div>
+      </section>
+
+      <!-- welcome + daily cases -->
+      <section class="dash-row">
+        <div class="dash-welcome" id="welcomeBox"><!-- rendered by script.js --></div>
+        <a class="dash-promo" href="#/case-battles">
+          <div class="dp-txt">
+            <span>Rank up and open</span>
+            <b>DAILY CASES</b>
+            <i>Check Now</i>
+          </div>
+          <div class="dp-art">
+            <model-viewer class="dp-model" src="models/gold-dominus-hat.glb" alt="Gold Dominus"
+              auto-rotate auto-rotate-delay="0" rotation-per-second="90deg"
+              camera-orbit="0deg 78deg 105%" field-of-view="28deg" interaction-prompt="none"
+              disable-zoom shadow-intensity="0" exposure="1.1"></model-viewer>
+          </div>
+        </a>
+      </section>
+
+      <!-- play games -->
+      <div class="row-head"><h2>Play Games</h2><span>– Pick your favorite and dive in</span></div>
+      <section class="play-row">
+        <a class="tile t-battles" href="#/case-battles"><span class="tile-art"><svg viewBox="0 0 512 512"><use href="#swordsX"/></svg></span><b>Case<br>Battles</b></a>
+        <a class="tile t-blackjack" href="#/blackjack"><span class="tile-art tile-cards"><svg class="bj-card-b" viewBox="0 0 92 128"><rect width="92" height="128" rx="10" fill="#ffffff"/><rect x="6" y="6" width="80" height="116" rx="7" fill="#1e63e6"/><path d="M6 34 86 10 M6 62 86 38 M6 90 86 66 M6 118 86 94 M20 122 86 30 M48 122 86 58" stroke="rgba(255,255,255,.3)" stroke-width="3"/></svg><svg class="bj-card-a" viewBox="0 0 92 128"><rect width="92" height="128" rx="10" fill="#ffffff"/><text x="11" y="28" font-family="Outfit, Inter, sans-serif" font-size="24" font-weight="800" fill="#e33b3b">A</text><path d="M46 50 L68 82 L46 114 L24 82 Z" fill="#e33b3b"/><path d="M46 58 L60 82 L46 106 L32 82 Z" fill="#ff7b7b" opacity=".55"/></svg></span><b>Blackjack</b></a>
+        <a class="tile t-cases" href="#/home"><span class="tile-art"><img class="tile-img" src="cases/case-blue.png" alt=""></span><b>Cases</b></a>
+        <a class="tile t-mines" href="#/mines"><span class="tile-art"><svg viewBox="0 0 24 24"><use href="#bomb"/></svg></span><b>Mines</b></a>
+        <a class="tile t-towers" href="#"><span class="tile-art"><svg viewBox="0 0 24 24"><use href="#rook"/></svg></span><b>Towers</b></a>
+        <a class="tile t-crash" href="#"><span class="tile-art"><svg viewBox="0 0 24 24"><use href="#trend"/></svg></span><b>Crash</b></a>
+        <a class="tile t-limbo" href="#"><span class="tile-art"><svg viewBox="0 0 24 24"><use href="#updown"/></svg></span><b>Limbo</b></a>
+        <a class="tile t-double" href="#"><span class="tile-art"><svg viewBox="0 0 24 24"><use href="#spin"/></svg></span><b>Double</b></a>
+        <a class="tile t-roll" href="#"><span class="tile-art"><svg viewBox="0 0 24 24"><use href="#wheel"/></svg></span><b>Roll</b></a>
+        <a class="tile t-upgrader" href="#"><span class="tile-art"><svg viewBox="0 0 24 24"><use href="#lvlup"/></svg></span><b>Upgrader</b></a>
+      </section>
+
+      <!-- featured cases -->
+      <div class="row-head fc-head"><h2>Featured Cases</h2><a class="btn btn-ghost btn-sm" href="#/case-battles">View All</a></div>
+      <section class="cases-row" id="featuredCases"></section>
+
+      <div class="section-title hl-title">
+        <svg class="nav-ico" viewBox="0 0 512 512" width="17" height="17"><use href="#swordsX"/></svg> Battle Highlights
+        <a class="hl-viewall" href="#/case-battles">View All Battles</a>
+      </div>
+      <div class="hl-list" id="homeHighlights"></div>
+
+      <!-- free to play -->
+      <div class="f2p-title">Free To Play</div>
+      <section class="f2p-row">
+        <a class="f2p-card" href="#"><img class="f2p-logo" src="img/x-3d.png" alt="">Find codes on our X</a>
+        <a class="f2p-card" href="#"><img class="f2p-logo" src="img/discord-3d.png" alt="">Giveaways on our Discord</a>
+        <a class="f2p-card" href="#"><svg class="f2p-glyph" viewBox="0 0 28 28"><use href="#raincloud2"/></svg>Join free rains every hour</a>
+        <a class="f2p-card" href="#"><svg class="f2p-glyph" viewBox="0 0 24 24"><use href="#ticket2"/></svg>Redeem free flash codes</a>
+        <a class="f2p-card" href="#"><svg class="f2p-glyph" viewBox="0 0 24 24"><use href="#gift2"/></svg>Win free cases in giveaways</a>
+        <a class="f2p-card" href="#"><svg class="f2p-glyph" viewBox="0 0 24 24"><use href="#goldtoken"/></svg>Play for free using fun coins</a>
+      </section>
+
+      <div class="pay-section">
+        <div class="pay-title">Select preferred payment method</div>
+        <div class="pay-viewport">
+          <div class="pay-track">
+            <div class="pay-row">
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg>USDT</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg>USDC</span>
+              <span class="pay-chip">VISA</span>
+              <span class="pay-chip mc"><i></i><i></i>Mastercard</span>
+              <span class="pay-chip">PayPal</span>
+              <span class="pay-chip">Apple Pay</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg>BTC</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#diamond"/></svg>ETH</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#gem"/></svg>SOL</span>
+            </div>
+            <div class="pay-row" aria-hidden="true">
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg>USDT</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg>USDC</span>
+              <span class="pay-chip">VISA</span>
+              <span class="pay-chip mc"><i></i><i></i>Mastercard</span>
+              <span class="pay-chip">PayPal</span>
+              <span class="pay-chip">Apple Pay</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#coin"/></svg>BTC</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#diamond"/></svg>ETH</span>
+              <span class="pay-chip"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#gem"/></svg>SOL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MINES VIEW ============ -->
+    <section id="view-mines" hidden>
+      <div class="mn-wrap">
+        <aside class="mn-panel">
+          <div class="mn-logo">
+            <span class="mn-logo-ico"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#bomb"/></svg></span>
+            <h1>Mines</h1>
+          </div>
+          <div class="mn-field">
+            <label>Bet Amount</label>
+            <div class="mn-bet-input">
+              <svg viewBox="0 0 24 24" width="15" height="15"><use href="#coin"/></svg>
+              <input type="text" id="mnBet" placeholder="Enter a bet…" inputmode="decimal" maxlength="12">
+            </div>
+            <div class="mn-quick">
+              <button type="button" data-frac="0.5">½</button>
+              <button type="button" data-frac="2">2x</button>
+              <button type="button" data-frac="max">Max</button>
+            </div>
+          </div>
+          <div class="mn-field">
+            <label>Grid Size</label>
+            <div class="mn-grid-chips" id="mnGridChips">
+              <button type="button" class="active" data-g="5">5x5</button>
+              <button type="button" data-g="6">6x6</button>
+              <button type="button" data-g="7">7x7</button>
+              <button type="button" data-g="8">8x8</button>
+            </div>
+          </div>
+          <div class="mn-field">
+            <label>Mines Amount</label>
+            <div class="mn-mines-row">
+              <span class="mn-mines-ico"><svg viewBox="0 0 24 24" width="15" height="15"><use href="#bomb"/></svg></span>
+              <b id="mnMineCount">3</b>
+              <span class="mn-steppers">
+                <button type="button" id="mnMinus" aria-label="Fewer mines">−</button>
+                <button type="button" id="mnPlus" aria-label="More mines">+</button>
+              </span>
+            </div>
+          </div>
+          <button class="mn-start" id="mnStart">Start Game</button>
+          <button class="mn-cashout" id="mnCashout" hidden disabled>Cash Out <span id="mnCashAmt"></span></button>
+          <div class="mn-fair-row">
+            <button class="btn btn-ghost mn-fair" id="mnFair"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#shield"/></svg> Fairness</button>
+            <span class="mn-mult-now" id="mnMultNow">1.00x</span>
+          </div>
+        </aside>
+        <div class="mn-stage">
+          <div class="mn-grid" id="mnGrid"></div>
+        </div>
+      </div>
+      <div class="mn-mults" id="mnMults"></div>
+    </section>
+
+    <!-- ============ BLACKJACK VIEW ============ -->
+    <section id="view-blackjack" hidden>
+      <div class="bj-wrap">
+        <div class="bj-panel">
+          <div class="bj-title">
+            <div><h1>Blackjack</h1><span class="bj-underline"></span></div>
+          </div>
+
+          <div class="bj-field">
+            <label>Bet Amount</label>
+            <div class="bj-bet-input">
+              <svg viewBox="0 0 24 24" width="15" height="15"><use href="#coin"/></svg>
+              <input type="text" id="bjBetInput" placeholder="Enter a bet…" inputmode="decimal">
+            </div>
+            <div class="bj-quick">
+              <button type="button" data-frac="0.5">½</button>
+              <button type="button" data-frac="2">2x</button>
+              <button type="button" data-frac="max">Max</button>
+            </div>
+          </div>
+
+          <div class="bj-actions">
+            <button class="bj-act" id="bjHit" disabled>Hit</button>
+            <button class="bj-act" id="bjStand" disabled>Stand</button>
+            <button class="bj-act" id="bjSplit" disabled>Split</button>
+            <button class="bj-act" id="bjDouble" disabled>Double</button>
+          </div>
+
+          <button class="btn btn-primary bj-start" id="bjStart">Start Game</button>
+          <button class="btn btn-ghost bj-fair" id="bjFairBtn"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#shield"/></svg> Fairness</button>
+        </div>
+
+        <div class="bj-table">
+          <div class="bj-deck">
+            <div class="bj-card back"></div>
+            <div class="bj-card back off1"></div>
+            <div class="bj-card back off2"></div>
+          </div>
+          <div class="bj-felt-glow"></div>
+
+          <div class="bj-table-logo" aria-hidden="true">
+            <div class="bj-logo-word"><span class="w">RBX</span><span class="b">WIN</span></div>
+            <svg class="bj-logo-arc" viewBox="0 0 220 36" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4 Q110 40 216 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="bj-dealer-area">
+            <div class="bj-hand-label">Dealer <span class="bj-total" id="bjDealerTotal"></span></div>
+            <div class="bj-hand" id="bjDealerHand"></div>
+          </div>
+
+          <div class="bj-result" id="bjResult" hidden></div>
+
+          <div class="bj-player-area" id="bjPlayerArea"></div>
+
+          <div class="bj-plaque">
+            <div class="bj-pays">Blackjack Pays 3 to 2</div>
+            <div class="bj-ins">Insurance Pays 2 to 1</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CREATE BATTLE VIEW ============ -->
+    <section id="view-create" hidden>
+      <div class="cbp-head">
+        <div class="cbp-head-l">
+          <a href="#/case-battles" class="btn btn-ghost cbp-exit" title="Exit Creation"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#exit"/></svg></a>
+          <div class="cbp-titlewrap"><h1>Create Battle</h1><span class="cbp-underline"></span></div>
+        </div>
+      </div>
+
+      <div class="cbp-layout">
+        <aside class="cbp-settings">
+          <h3 class="cbp-sec">Game Settings</h3>
+          <div class="cbp-dd cbp-mode-dd" id="modeDD">
+            <button class="cbp-dd-btn" id="modeBtn" type="button">
+              <span id="modeLabel">1 VS 1</span>
+              <svg class="chev-svg" viewBox="0 0 24 24" width="10" height="10"><use href="#chev-d"/></svg>
+            </button>
+            <div class="dropdown cbp-dd-menu" id="modeMenu">
+              <a data-mode="1v1">1 VS 1</a>
+              <a data-mode="2v2">2 VS 2</a>
+              <a data-mode="3v3">3 VS 3</a>
+              <a data-mode="1v1v1">1 V 1 V 1</a>
+              <a data-mode="ffa">Free-For-All</a>
+            </div>
+          </div>
+
+          <h3 class="cbp-sec">Game Modifiers</h3>
+          <div class="cbp-mods" id="typeRow">
+            <button class="type-chip active" data-type="normal" type="button">
+              <span class="mod-ico"><svg viewBox="0 0 512 512" width="18" height="18"><use href="#swordsX"/></svg></span>
+              <span class="mod-txt"><b>Normal</b><span>Classic head-to-head battle</span></span>
+            </button>
+            <button class="type-chip" data-type="jackpot" type="button">
+              <span class="mod-ico mod-gold"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#diamond"/></svg></span>
+              <span class="mod-txt"><b>Jackpot</b><span>Each pull goes toward the Jackpot</span></span>
+            </button>
+          </div>
+        </aside>
+
+        <div class="cbp-cases">
+          <div class="cbp-cases-head">
+            <h3 class="cbp-sec">Add Cases</h3>
+            <div class="cbp-cases-stats">
+              <span class="ac-chip">Rounds: <b id="cbMiniRounds">0</b></span>
+              <span class="ac-chip">Cost: <svg viewBox="0 0 24 24" width="13" height="13"><use href="#coin"/></svg> <b id="cbMiniCost">0.00</b></span>
+              <button class="btn btn-primary" id="createGo">Create Battle</button>
+            </div>
+          </div>
+          <div class="cbp-strip" id="pvCases"></div>
+          <div class="cbp-summary">
+            <div class="cbp-sum-players">
+              <div class="pv-title">Players</div>
+              <div class="pv-teams" id="pvTeams"></div>
+            </div>
+            <div class="cbp-stats">
+              <div class="stat"><span>Cost per player</span><b id="createCost">0.00</b></div>
+              <div class="stat"><span>Your balance</span><b id="createBalance">0.00</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ BATTLE VIEWER ============ -->
+    <section id="view-live" hidden>
+      <div class="bv-head">
+        <div class="bv-head-l">
+          <button class="btn btn-ghost cbp-exit" id="bvBack"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#exit"/></svg> Back to Battles</button>
+          <span class="balance-pill"><svg class="pill-coin" viewBox="0 0 24 24" width="22" height="22"><use href="#coin"/></svg><b id="bvBalance">0.00</b></span>
+          <span class="bv-modechip"><b id="bvMode">1 VS 1</b><span id="bvTypeL">Normal</span></span>
+          <span class="bv-cases-row" id="bvCasesRow"></span>
+        </div>
+        <div class="bv-head-r">
+          <span class="bv-seed" id="bvSeed">Seed —</span>
+          <span class="bv-pot">POT <b id="bvPot">0.00</b></span>
+          <span class="bv-round" id="bvRound">Round 1</span>
+          <button class="btn btn-ghost" id="bvSound">Sound On</button>
+        </div>
+      </div>
+      <div class="bv-stage" id="bvStage">
+        <div class="bv-gold-banner" id="bvGoldBanner" hidden><span>GOLD SPIN</span></div>
+        <div class="bv-cols" id="bvCols"></div>
+        <div class="bv-vs-mid" id="bvVs">VS</div>
+        <div class="bv-count" id="bvCount" hidden>3</div>
+        <div class="bv-confetti" id="bvConfetti"></div>
+        <div class="bv-winner" id="bvWinner" hidden></div>
+        <div class="jackpot-wheel" id="jackpotWheel" hidden>
+          <div class="jw-potline">Jackpot <b id="jwPot">0.00</b></div>
+          <div class="jw-viewport" id="jwViewport">
+            <div class="jw-pointer up"></div>
+            <div class="jw-track" id="jwTrack"></div>
+            <div class="jw-pointer down"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bv-playerbar" id="bvPlayerbar"></div>
+    </section>
+
+    <!-- ============ CASE BATTLES VIEW ============ -->
+    <section id="view-battles" hidden>
+      <div class="battles-head">
+        <div class="page-title">
+          <a class="back-link" href="#/home">‹ Home</a>
+          
+          <h1>Case Battles</h1>
+        </div>
+        <button class="btn btn-primary" id="createBattleBtn">+ Create Battle</button>
+      </div>
+      <div class="battle-list" id="battleList"></div>
+    </section>
+
+  </main>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="chat-header-bar">
+      <span class="chat-title"><svg class="nav-ico" viewBox="0 0 24 24" width="14" height="14"><use href="#bubble"/></svg> Chat</span>
+      <span class="online"><i></i>1,337 online</span>
+    </div>
+
+    <div class="rain-widget">
+      <div class="rain-label"><svg viewBox="0 0 24 24" width="17" height="17"><use href="#coin"/></svg> Coin Rain <span class="rain-timer" id="rainTimer">1:00</span></div>
+      <div class="rain-row">
+        <span class="rain-amount"><svg class="rain-coin" viewBox="0 0 24 24" width="19" height="19"><use href="#coin"/></svg> <b>100.00</b></span>
+        <button class="icon-btn" title="Rain balance" aria-label="Rain balance info" id="rainInfoBtn"><svg viewBox="0 0 24 24" width="15" height="15"><use href="#coin"/></svg></button>
+        <button class="btn btn-primary btn-sm" id="joinRainBtn">Join Rain</button>
+      </div>
+    </div>
+
+    <div class="chat" id="chat"><!-- seeded by script.js --></div>
+
+    <div class="chat-input">
+      <input type="text" id="chatMsg" maxlength="120" placeholder="Sign in to chat…" disabled>
+      <button class="send-btn" id="chatSend" title="Send" aria-label="Send message" disabled><svg viewBox="0 0 24 24" width="16" height="16"><use href="#send"/></svg></button>
+    </div>
+  </aside>
+</div>
+
+<button class="chat-toggle" id="chatToggle" title="Toggle chat" aria-label="Toggle chat sidebar"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#bubble"/></svg></button>
+
+<!-- auth modal -->
+<div class="modal-backdrop" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="modal">
+    <button class="modal-close" id="authClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="signin">Sign In</button>
+      <button class="auth-tab" data-tab="signup">Sign Up</button>
+    </div>
+    <h2 id="authTitle">Welcome back</h2>
+    <p class="muted" id="authHint">Sign in to pick up right where you left off.</p>
+    <label>Username</label>
+    <input type="text" id="authUser" placeholder="username" maxlength="16" autocomplete="off">
+    <label>Password</label>
+    <input type="password" id="authPass" placeholder="••••••••">
+    <div class="auth-error" id="authError"></div>
+    <button class="btn btn-primary btn-block" id="authSubmit">Sign In</button>
+  </div>
+</div>
+
+<!-- deposit modal -->
+<div class="modal-backdrop" id="depositModal" role="dialog" aria-modal="true" aria-labelledby="depositTitle">
+  <div class="modal">
+    <button class="modal-close" id="depositClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <h2 id="depositTitle">Deposit coins</h2>
+    <p class="muted">Pick a package — coins are credited to your balance instantly.</p>
+    <div class="deposit-grid">
+      <button class="deposit-option" data-amount="100"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg> +100</button>
+      <button class="deposit-option" data-amount="500"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg> +500</button>
+      <button class="deposit-option" data-amount="1000"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg> +1,000</button>
+      <button class="deposit-option" data-amount="5000"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#coin"/></svg> +5,000</button>
+    </div>
+  </div>
+</div>
+
+<!-- create battle is a full page now (see #view-create) -->
+
+<!-- view battle modal -->
+<div class="modal-backdrop" id="viewModal" role="dialog" aria-modal="true" aria-label="Battle details">
+  <div class="modal modal-lg">
+    <button class="modal-close" id="viewClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <div id="viewBody"></div>
+  </div>
+</div>
+
+<!-- add cases modal -->
+<div class="modal-backdrop" id="casesModal" role="dialog" aria-modal="true" aria-labelledby="casesTitle">
+  <div class="modal ac-modal">
+    <button class="modal-close" id="casesClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <div class="ac-head">
+      <div class="cbp-badge small"><svg class="chest gold" viewBox="0 0 120 96" width="24" height="19"><use href="#chest"/></svg></div>
+      <div class="cbp-titlewrap"><h2 id="casesTitle">Add Cases</h2><span class="cbp-underline"></span></div>
+    </div>
+    <div class="ac-toolbar">
+      <div class="cb-search">
+        <svg viewBox="0 0 24 24" width="14" height="14"><use href="#search"/></svg>
+        <input type="text" id="caseSearch" placeholder="Search for a case…" maxlength="30">
+      </div>
+      <div class="cbp-dd ac-dd" id="acPriceDD">
+        <button class="cbp-dd-btn" id="acPriceBtn" type="button">
+          Price: <b id="acPriceLabel">All</b>
+          <svg class="chev-svg" viewBox="0 0 24 24" width="10" height="10"><use href="#chev-d"/></svg>
+        </button>
+        <div class="dropdown cbp-dd-menu" id="acPriceMenu">
+          <a data-price="all" class="active">All</a>
+          <a data-price="low">Under 10.00</a>
+          <a data-price="mid">10.00 – 30.00</a>
+          <a data-price="high">30.00 +</a>
+        </div>
+      </div>
+      <div class="cbp-dd ac-dd" id="acSortDD">
+        <button class="cbp-dd-btn" id="acSortBtn" type="button">
+          Sort by: <b id="acSortLabel">Price (Low to High)</b>
+          <svg class="chev-svg" viewBox="0 0 24 24" width="10" height="10"><use href="#chev-d"/></svg>
+        </button>
+        <div class="dropdown cbp-dd-menu" id="acSortMenu">
+          <a data-sort="asc" class="active">Price (Low to High)</a>
+          <a data-sort="desc">Price (High to Low)</a>
+          <a data-sort="name">Name (A–Z)</a>
+        </div>
+      </div>
+    </div>
+    <div class="ac-grid" id="cbCases"></div>
+    <div class="ac-footer">
+      <span class="ac-chip">Cases: <b id="acCount">0</b></span>
+      <span class="ac-chip">Total Cost: <svg viewBox="0 0 24 24" width="13" height="13"><use href="#coin"/></svg> <b id="acTotal">0.00</b></span>
+      <button class="btn btn-primary ac-confirm" id="acDone">Confirm Selection</button>
+    </div>
+  </div>
+</div>
+
+<!-- chat profile modal -->
+<div class="modal-backdrop" id="profileModal" role="dialog" aria-modal="true" aria-label="Chat user profile">
+  <div class="modal prof-modal">
+    <button class="modal-close" id="profClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <div class="prof-head">
+      <span class="prof-avatar-wrap">
+        <span class="prof-avatar" id="profAvatar"></span>
+        <span class="lvl prof-lvl" id="profLvl">1</span>
+      </span>
+      <h2 id="profName">user</h2>
+      <p class="muted" id="profJoined">Joined on —</p>
+    </div>
+    <div class="prof-actions">
+      <button class="btn btn-primary" id="profTip">Tip User</button>
+      <button class="btn btn-ghost" id="profIgnore">Ignore User</button>
+    </div>
+    <div class="prof-stats">
+      <div class="prof-stat"><span>Total Wagered</span><b><svg viewBox="0 0 24 24" width="12" height="12"><use href="#coin"/></svg><em id="profWagered">0.00</em></b></div>
+      <div class="prof-stat"><span>Total Bets</span><b><em id="profBets">0</em></b></div>
+      <div class="prof-stat"><span>Join Date</span><b><em id="profDate">—</em></b></div>
+    </div>
+  </div>
+</div>
+
+<!-- tip coins modal -->
+<div class="modal-backdrop" id="tipModal" role="dialog" aria-modal="true" aria-label="Tip coins">
+  <div class="modal tip-modal">
+    <button class="modal-close" id="tipClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
+    <h2>Tip Coins</h2>
+    <label>Sending To</label>
+    <div class="tip-to">
+      <span class="tip-to-av" id="tipAvatar"></span>
+      <span class="lvl" id="tipLvl">1</span>
+      <b id="tipName">user</b>
+    </div>
+    <label>Amount</label>
+    <div class="tip-amount">
+      <svg viewBox="0 0 24 24" width="15" height="15"><use href="#coin"/></svg>
+      <input type="text" id="tipAmount" placeholder="50.00" inputmode="decimal" maxlength="12">
+    </div>
+    <div class="tip-note">
+      <svg viewBox="0 0 24 24" width="15" height="15"><use href="#target"/></svg>
+      <p><b>You cannot tip yourself.</b> If someone is asking you to do so, it's a scam.</p>
+    </div>
+    <button class="btn btn-primary btn-block" id="tipSubmit">Tip User</button>
+    <button class="btn btn-ghost btn-block" id="tipCancel">Close</button>
+  </div>
+</div>
+
+<footer class="page-footer big-footer">
+  <div class="ft-top">
+    <div class="ft-brand">
+      <div class="ft-legal">
+        <b>GAMBLE RESPONSIBLY 18+</b>
+        <p><b>Support@rbxwin.com</b></p>
+        <p>RBXWIN is a fan-made project for personal use, built for demonstration purposes only. Not affiliated with, endorsed by, or sponsored by Roblox Corporation.</p>
+        <p>Coins shown across this site are play credits with no cash value and cannot be redeemed, exchanged, or withdrawn for real currency.</p>
+      </div>
+      <div class="ft-fair"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#shield"/></svg><div><b>Provably Fair</b><span>Every result is verifiable</span></div></div>
+    </div>
+    <div class="ft-cols">
+      <div class="ft-col"><h4>Games</h4><a href="#/case-battles">Battles</a><a class="ft-soon">Cases</a></div>
+      <div class="ft-col"><h4>Platform</h4><a class="ft-soon">Rewards</a><a class="ft-soon">Support</a></div>
+      <div class="ft-col"><h4>Cashier</h4><a class="ft-soon">Deposit</a><a class="ft-soon">Withdraw</a></div>
+      <div class="ft-col"><h4>About Us</h4><a class="ft-soon">Terms of Service</a><a class="ft-soon">Privacy Policy</a><a class="ft-soon">Fairness</a></div>
+      <div class="ft-col"><h4>Community</h4><a class="ft-soon">Discord</a><a class="ft-soon">X</a></div>
+    </div>
+  </div>
+  <div class="ft-bottom">RBXWIN is a fan-made project for personal use. Not affiliated with Roblox. Coins are play credits with no cash value.</div>
+</footer>
+
+<script src="script.js?v=135"></script>
+</body>
+</html>

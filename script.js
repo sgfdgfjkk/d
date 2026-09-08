@@ -232,6 +232,12 @@ const Api = {
     if (!r.ok) throw new Error(data.error || 'tip failed');
     return data;
   },
+  async resetAllBalances() {
+    const r = await fetch('/api/admin/reset-balances', { method: 'POST' });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'reset failed');
+    return data;
+  },
 };
 
 let currentUser = null;
@@ -882,7 +888,7 @@ function renderNav() {
   const slot = $('#navBalanceSlot');
   if (currentUser) {
     slot.innerHTML = `
-      <button class="balance-pill" id="balancePill" title="Your balance — click to deposit">
+      <button class="balance-pill" id="balancePill" title="Your balance">
         <svg class="pill-coin" viewBox="0 0 24 24" width="22" height="22"><use href="#coin"></use></svg>
         <b id="balanceValue">0.00</b>
       </button>`;
@@ -900,7 +906,6 @@ function renderNav() {
       </div>`;
     shownBalance = 0;
     renderBalance(false);
-    $('#balancePill').addEventListener('click', openDeposit);
     $('#userChip').addEventListener('click', (e) => {
       e.stopPropagation();
       $('#userDropdown').classList.toggle('open');
@@ -1049,6 +1054,23 @@ async function sendChat() {
   const text = inp.value.trim();
   if (!text || !currentUser) return;
   inp.value = '';
+
+  if (text.toLowerCase() === '/resetallbalances') {
+    try {
+      const res = await Api.resetAllBalances();
+      if (currentUser) {
+        currentUser.balance = 0;
+        cacheUserLocally();
+        renderBalance(true);
+      }
+      toast(`Reset ${res.count} account balance(s) to 0.`);
+      addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: `${currentUser.name} reset everyone's balance to 0.` });
+    } catch (e) {
+      toast('Could not reset balances — check the server.');
+    }
+    return;
+  }
+
   try {
     const msg = await Api.postChat({ av: avatarFor(currentUser.name), n: currentUser.name, text });
     addMessage(msg);

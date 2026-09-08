@@ -29,12 +29,13 @@ def load_data():
                 data = json.load(f)
                 data.setdefault("battles", {})
                 data.setdefault("chat", [])
+                data.setdefault("users", {})
                 data.setdefault("next_battle_id", 1)
                 data.setdefault("next_chat_id", 1)
                 return data
         except Exception:
             pass
-    return {"battles": {}, "chat": [], "next_battle_id": 1, "next_chat_id": 1}
+    return {"battles": {}, "chat": [], "users": {}, "next_battle_id": 1, "next_chat_id": 1}
 
 
 STATE = load_data()
@@ -89,6 +90,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     # ---------------- GET ----------------
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+        parts = [p for p in parsed.path.split("/") if p]
+
+        # GET /api/users/<name>  -> public profile info (balance, join date)
+        if len(parts) == 3 and parts[0] == "api" and parts[1] == "users":
+            name = urllib.parse.unquote(parts[2])
+            with lock:
+                u = STATE["users"].get(name)
+            if not u:
+                return self._send_json({"error": "not found"}, 404)
+            return self._send_json({"name": name, "balance": u["balance"], "created": u["created"]})
 
         if parsed.path == "/api/battles":
             with lock:
@@ -122,6 +133,77 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         parts = [p for p in parsed.path.split("/") if p]
+
+        # POST /api/register -> create an account (server is the source of truth for balances)
+        if parsed.path == "/api/register":
+            data = self._read_json()
+            name = str(data.get("name", "")).strip()[:20]
+            pw = str(data.get("pass", ""))
+            if len(name) < 3 or not pw:
+                return self._send_json({"error": "invalid"}, 400)
+            with lock:
+                if name in STATE["users"]:
+                    return self._send_json({"error": "username taken"}, 409)
+                u = {"pass": pw, "balance": 50000, "created": int(time.time() * 1000)}
+                STATE["users"][name] = u
+                save_data()
+            return self._send_json({"name": name, "balance": u["balance"], "created": u["created"]})
+
+        # POST /api/login -> verify credentials, return current server-side balance
+        if parsed.path == "/api/login":
+            data = self._read_json()
+            name = str(data.get("name", "")).strip()[:20]
+            pw = str(data.get("pass", ""))
+            with lock:
+                u = STATE["users"].get(name)
+            if not u or u.get("pass") != pw:
+                return self._send_json({"error": "invalid credentials"}, 401)
+            return self._send_json({"name": name, "balance": u["balance"], "created": u["created"]})
+
+        # POST /api/balance -> sync this player's balance after local gameplay (bets, deposits, etc.)
+        if parsed.path == "/api/balance":
+            data = self._read_json()
+            name = str(data.get("name", "")).strip()[:20]
+            pw = str(data.get("pass", ""))
+            try:
+                balance = round(float(data.get("balance", 0)), 2)
+            except (TypeError, ValueError):
+                return self._send_json({"error": "invalid balance"}, 400)
+            with lock:
+                u = STATE["users"].get(name)
+                if not u or u.get("pass") != pw:
+                    return self._send_json({"error": "invalid credentials"}, 401)
+                u["balance"] = balance
+                save_data()
+            return self._send_json({"ok": True, "balance": balance})
+
+        # POST /api/tip -> atomically move coins from one real account to another
+        if parsed.path == "/api/tip":
+            data = self._read_json()
+            frm = str(data.get("from", "")).strip()[:20]
+            pw = str(data.get("pass", ""))
+            to = str(data.get("to", "")).strip()[:20]
+            try:
+                amount = round(float(data.get("amount", 0)), 2)
+            except (TypeError, ValueError):
+                return self._send_json({"error": "invalid amount"}, 400)
+            if amount <= 0:
+                return self._send_json({"error": "invalid amount"}, 400)
+            if frm == to:
+                return self._send_json({"error": "cannot tip yourself"}, 400)
+            with lock:
+                sender = STATE["users"].get(frm)
+                if not sender or sender.get("pass") != pw:
+                    return self._send_json({"error": "invalid credentials"}, 401)
+                recipient = STATE["users"].get(to)
+                if not recipient:
+                    return self._send_json({"error": "recipient not found"}, 404)
+                if sender["balance"] < amount:
+                    return self._send_json({"error": "insufficient balance"}, 400)
+                sender["balance"] = round(sender["balance"] - amount, 2)
+                recipient["balance"] = round(recipient["balance"] + amount, 2)
+                save_data()
+            return self._send_json({"ok": True, "fromBalance": sender["balance"], "toBalance": recipient["balance"]})
 
         # POST /api/battles  -> create a battle (creator fills the first slot)
         if parsed.path == "/api/battles":

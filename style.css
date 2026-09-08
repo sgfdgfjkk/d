@@ -413,6 +413,8 @@ a{color:inherit;text-decoration:none}
 .cbp-sum-right{display:flex;flex-direction:column;gap:12px}
 .cbp-badge{width:46px;height:46px;border-radius:var(--r-full);background:linear-gradient(180deg,#1c2c50,#141f3a);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(238,243,255,.18);flex-shrink:0}
 .cbp-badge.small{width:42px;height:42px;border-radius:var(--r-md);border-color:rgba(140,170,255,.25);box-shadow:0 0 14px rgba(47,128,255,.18)}
+.ac-badge-model{overflow:hidden}
+.ac-badge-mv{display:block;width:40px;height:40px;pointer-events:none;--poster-color:transparent}
 .cbp-titlewrap h1,.cbp-titlewrap h2{font-family:'Outfit',sans-serif;font-size:22px;letter-spacing:.4px}
 .cbp-titlewrap .cbp-underline{display:block;width:58px;height:3px;border-radius:2px;background:linear-gradient(90deg,#eef3ff,#4da3ff);margin-top:5px}
 .cbp-dd{position:relative}
@@ -756,9 +758,17 @@ body.sidebar-hidden .sidebar{display:none}
 
 
 /* ---------- battle viewer v2: flip-style big items ---------- */
-.bv-cases-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px}
-.bv-case-thumb svg{width:56px;height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5));transition:transform .2s}
+.bv-cases-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
+.bv-case-thumb{position:relative;display:flex;align-items:center;justify-content:center;padding:4px;border-radius:var(--r-sm);transition:transform .25s,opacity .25s,filter .25s}
+.bv-case-thumb svg,.bv-case-thumb .case-img{width:56px;height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5));transition:transform .2s}
 .bv-case-thumb svg:hover{transform:scale(1.1)}
+/* upcoming: hasn't been opened yet — just the normal case art, no dimming */
+.bv-case-thumb.cr-upcoming{opacity:1;filter:none}
+/* active: the case currently spinning — same normal look, no glow/scale */
+.bv-case-thumb.cr-active{opacity:1;filter:none;transform:none}
+/* done: already opened — this is the only state that goes grey, with a checkmark badge */
+.bv-case-thumb.cr-done{opacity:.4;filter:grayscale(1)}
+.bv-case-thumb.cr-done::after{content:"✓";position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;border-radius:50%;background:#1fae5e;box-shadow:0 0 0 2px #0b1426;font-size:9px;line-height:14px;text-align:center;color:#fff;font-weight:900}
 .bv-ribbon{display:flex;align-items:center;justify-content:center;gap:9px;background:#0b1426;border:none;border-radius:var(--r-pill);padding:8px 22px;width:max-content;margin:0 auto 20px;font-size:13.5px;font-weight:800}
 .bv-rname{color:var(--text);letter-spacing:.4px}
 .bv-rval{display:flex;align-items:center;gap:4px;color:var(--text);font-variant-numeric:tabular-nums}
@@ -896,6 +906,13 @@ img.golden,.mini-item.gold .it-img{filter:sepia(1) saturate(3.2) hue-rotate(-15d
 
 /* ---------- gold token card (3D coin model) ---------- */
 .token-model{display:block;width:52px;height:52px;pointer-events:none;--poster-color:transparent}
+
+/* kill model-viewer's built-in loading progress bar (shows as a black bar
+   over the model while the glb is fetching/parsing, incl. every time a
+   src swap re-triggers a load, e.g. the daily-case model cycle) */
+model-viewer{--progress-bar-height:0px;--progress-bar-color:transparent;--progress-mask-base-color:transparent}
+model-viewer::part(default-progress-bar){display:none!important}
+model-viewer::part(default-progress-mask){display:none!important}
 .mini-item.token{border-color:rgba(238,243,255,.4);background:linear-gradient(180deg,#141f3a,#0e1730)}
 .mini-item.token .token-model{width:74px;height:74px;margin-top:12px;filter:drop-shadow(0 0 14px rgba(160,200,255,.45))}
 .loot-card.token .token-model{width:62px;height:62px}
@@ -1600,7 +1617,19 @@ body::after{
 
 /* ---- home v2 polish 2: real logos, silver case, payment marquee ---- */
 .dp-img{width:158px}
-.dp-model{width:170px;height:170px;pointer-events:none;--poster-color:transparent;filter:drop-shadow(0 16px 30px rgba(0,10,40,.6))}
+.dp-model{width:170px;height:170px;pointer-events:none;--poster-color:transparent;filter:drop-shadow(0 16px 30px rgba(0,10,40,.6));
+  transform:scale(1);opacity:1;transition:transform .32s cubic-bezier(.5,0,.75,0),opacity .28s ease}
+.dp-model.dp-model-out{transform:scale(.15);opacity:0;transition:transform .32s cubic-bezier(.5,0,1,1),opacity .3s ease}
+.dp-model.dp-model-in{animation:dpModelPop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes dpModelPop{
+  0%{transform:scale(.15);opacity:0}
+  60%{transform:scale(1.08);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+@media (prefers-reduced-motion: reduce){
+  .dp-model{transition:none}
+  .dp-model.dp-model-in{animation:none}
+}
 .f2p-logo{width:52px;height:52px;border-radius:var(--r-full);object-fit:cover;object-position:50% 50%;
   box-shadow:0 6px 14px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.08)}
 .f2p-logo-dc{object-position:47% 50%;transform:scale(1.02)}

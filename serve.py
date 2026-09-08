@@ -205,6 +205,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 save_data()
             return self._send_json({"ok": True, "fromBalance": sender["balance"], "toBalance": recipient["balance"]})
 
+        # POST /api/admin/reset-balances -> set every user's balance to 0
+        if parsed.path == "/api/admin/reset-balances":
+            with lock:
+                for u in STATE["users"].values():
+                    u["balance"] = 0
+                count = len(STATE["users"])
+                save_data()
+            return self._send_json({"ok": True, "count": count})
+
         # POST /api/battles  -> create a battle (creator fills the first slot)
         if parsed.path == "/api/battles":
             data = self._read_json()

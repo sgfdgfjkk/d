@@ -882,7 +882,7 @@ function renderNav() {
   const slot = $('#navBalanceSlot');
   if (currentUser) {
     slot.innerHTML = `
-      <button class="balance-pill" id="balancePill" title="Your balance — type /depo in chat to deposit">
+      <button class="balance-pill" id="balancePill" title="Your balance — click to deposit">
         <svg class="pill-coin" viewBox="0 0 24 24" width="22" height="22"><use href="#coin"></use></svg>
         <b id="balanceValue">0.00</b>
       </button>`;
@@ -900,8 +900,7 @@ function renderNav() {
       </div>`;
     shownBalance = 0;
     renderBalance(false);
-    // balance pill is now just a display — deposit modal opens via the
-    // /depo chat command instead of a click here.
+    $('#balancePill').addEventListener('click', openDeposit);
     $('#userChip').addEventListener('click', (e) => {
       e.stopPropagation();
       $('#userDropdown').classList.toggle('open');
@@ -1050,12 +1049,6 @@ async function sendChat() {
   const text = inp.value.trim();
   if (!text || !currentUser) return;
   inp.value = '';
-  // secret-ish slash command: typing /depo opens the deposit modal instead
-  // of posting a chat message (this replaces the old click-the-balance flow).
-  if (/^\/depo(sit)?\b/i.test(text)) {
-    openDeposit();
-    return;
-  }
   try {
     const msg = await Api.postChat({ av: avatarFor(currentUser.name), n: currentUser.name, text });
     addMessage(msg);
@@ -2895,17 +2888,7 @@ if (document.readyState === 'loading') {
     } catch (e) {
       if (e.message === 'recipient not found') toast(tipTarget + " doesn't have an account here yet.");
       else if (e.message === 'insufficient balance') { toast('Not enough coins — deposit first!'); openDeposit(); }
-      else if (e.message === 'invalid credentials') {
-        // the browser thinks we're signed in, but the server has no matching
-        // account (fresh/reset data file, or a stale cached password) —
-        // force back to sign-in instead of blaming serve.py for this.
-        currentUser = null;
-        store.setSession(null);
-        tipModal.classList.remove('open');
-        openAuth('signin');
-        toast('Your session is out of date — please sign in again.');
-      }
-      else toast('Tip failed (' + (e.message || 'unknown error') + ') — check that serve.py is running.');
+      else toast('Tip failed — check that serve.py is running.');
     } finally {
       if (btn) btn.disabled = false;
     }

@@ -206,6 +206,32 @@ const Api = {
     if (!r.ok) throw new Error('chat post failed');
     return r.json();
   },
+  async register(name, pass) {
+    const r = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, pass }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'register failed');
+    return data;
+  },
+  async login(name, pass) {
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, pass }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'login failed');
+    return data;
+  },
+  async getUser(name) {
+    const r = await fetch(`/api/users/${encodeURIComponent(name)}`);
+    if (!r.ok) return null;
+    return r.json();
+  },
+  async syncBalance(name, pass, balance) {
+    try { await fetch('/api/balance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, pass, balance }) }); } catch (e) {}
+  },
+  async tip(from, pass, to, amount) {
+    const r = await fetch('/api/tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from, pass, to, amount }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'tip failed');
+    return data;
+  },
 };
 
 let currentUser = null;
@@ -215,14 +241,49 @@ function loadSession() {
   const name = store.session();
   const u = store.users();
   if (name && u[name]) currentUser = { name, ...u[name] };
+  // the server is the real source of truth for balance (so tips received while
+  // you were away, or from another device, show up) — refresh once we can.
+  if (name) {
+    Api.getUser(name).then((fresh) => {
+      if (fresh && currentUser && currentUser.name === name && fresh.balance !== currentUser.balance) {
+        currentUser.balance = fresh.balance;
+        cacheUserLocally();
+        renderBalance(true);
+      }
+    }).catch(() => {});
+  }
 }
 
-function persistUser() {
+// updates the local cache only — used when mirroring a value we already got
+// FROM the server, so we don't immediately POST it right back.
+function cacheUserLocally() {
   if (!currentUser) return;
   const u = store.users();
   u[currentUser.name] = { pass: currentUser.pass, balance: currentUser.balance, created: currentUser.created };
   store.saveUsers(u);
 }
+
+function persistUser() {
+  if (!currentUser) return;
+  cacheUserLocally();
+  // push the new balance to the server too, so tips sent/received are checked
+  // against real numbers instead of a balance that only ever lived in this browser.
+  Api.syncBalance(currentUser.name, currentUser.pass, currentUser.balance);
+}
+
+// catches tips that arrive while you're already on the page
+async function pollBalance() {
+  if (!currentUser) return;
+  try {
+    const fresh = await Api.getUser(currentUser.name);
+    if (fresh && currentUser && fresh.balance !== currentUser.balance) {
+      currentUser.balance = fresh.balance;
+      cacheUserLocally();
+      renderBalance(true);
+    }
+  } catch (e) {}
+}
+setInterval(pollBalance, 4000);
 
 function animateCount(el, from, to, ms = 550) {
   const t0 = performance.now();
@@ -783,26 +844,36 @@ async function submitAuth() {
   const err = $('#authError');
   if (name.length < 3) { err.textContent = 'Username must be at least 3 characters.'; return; }
   if (!pass) { err.textContent = 'Enter a password.'; return; }
-  const users = store.users();
-  if (authMode === 'signup') {
-    if (users[name]) { err.textContent = 'That username is taken — try another.'; return; }
-    // balances are stored in credits; 1.00 shown = 500 credits
-    users[name] = { pass, balance: 50000, created: Date.now() };
-    store.saveUsers(users);
-    currentUser = { name, ...users[name] };
-    store.setSession(name);
-    $('#authModal').classList.remove('open');
-    renderNav();
-    toast(`Welcome, ${name} — 100.00 coins claimed!`);
-    addMessage({ av: avatarFor(name), n: 'System', system: true, sys: true, text: `${name} just joined — say hi!` });
-  } else {
-    const u = users[name];
-    if (!u || u.pass !== pass) { err.textContent = 'Wrong username or password.'; return; }
-    currentUser = { name, ...u };
-    store.setSession(name);
-    $('#authModal').classList.remove('open');
-    renderNav();
-    toast(`Welcome back, ${name}!`);
+  const btn = $('#authSubmit');
+  if (btn) btn.disabled = true;
+  err.textContent = '';
+  try {
+    if (authMode === 'signup') {
+      // accounts + balances now live on the shared server, not just this browser —
+      // that's what lets tips actually reach a real other player.
+      const u = await Api.register(name, pass);
+      currentUser = { name, pass, balance: u.balance, created: u.created };
+      cacheUserLocally();
+      store.setSession(name);
+      $('#authModal').classList.remove('open');
+      renderNav();
+      toast(`Welcome, ${name} — 100.00 coins claimed!`);
+      addMessage({ av: avatarFor(name), n: 'System', system: true, sys: true, text: `${name} just joined — say hi!` });
+    } else {
+      const u = await Api.login(name, pass);
+      currentUser = { name, pass, balance: u.balance, created: u.created };
+      cacheUserLocally();
+      store.setSession(name);
+      $('#authModal').classList.remove('open');
+      renderNav();
+      toast(`Welcome back, ${name}!`);
+    }
+  } catch (e) {
+    if (e.message === 'username taken') err.textContent = 'That username is taken — try another.';
+    else if (e.message === 'invalid credentials') err.textContent = 'Wrong username or password.';
+    else err.textContent = 'Could not reach the server — make sure serve.py is running.';
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -2742,18 +2813,26 @@ if (document.readyState === 'loading') {
 
   function openProfile(name) {
     profName = name;
-    const u = store.users()[name];
     document.getElementById('profAvatar').innerHTML = avatarSVG(avatarFor(name));
     document.getElementById('profLvl').textContent = botLvl(name);
     document.getElementById('profName').textContent = name;
-    const dateStr = u && u.created ? fmtDate(u.created) : null;
-    document.getElementById('profJoined').textContent = dateStr ? 'Joined on ' + dateStr : 'Site regular';
+    document.getElementById('profJoined').textContent = 'Site regular';
     const w = wagerOf(name);
     document.getElementById('profWagered').textContent = fmt(w.w);
     document.getElementById('profBets').textContent = w.n;
-    document.getElementById('profDate').textContent = dateStr || '—';
+    document.getElementById('profDate').textContent = '—';
     document.getElementById('profIgnore').textContent = store.ignore().includes(name) ? 'Unignore User' : 'Ignore User';
     profModal.classList.add('open');
+    // real accounts (not just ones you've made in this browser) live on the
+    // server now, so look the join date up there too.
+    (currentUser && currentUser.name === name ? Promise.resolve(currentUser) : Api.getUser(name)).then((u) => {
+      if (!u || profName !== name) return;
+      const dateStr = u.created ? fmtDate(u.created) : null;
+      if (dateStr) {
+        document.getElementById('profJoined').textContent = 'Joined on ' + dateStr;
+        document.getElementById('profDate').textContent = dateStr;
+      }
+    }).catch(() => {});
   }
 
   document.getElementById('profTip').addEventListener('click', () => { if (profName) openTip(profName); });
@@ -2786,7 +2865,7 @@ if (document.readyState === 'loading') {
     setTimeout(() => document.getElementById('tipAmount').focus(), 120);
   }
 
-  document.getElementById('tipSubmit').addEventListener('click', () => {
+  document.getElementById('tipSubmit').addEventListener('click', async () => {
     if (!tipTarget) return;
     if (!currentUser) { openAuth('signin'); toast('Sign in to tip!'); return; }
     if (tipTarget === currentUser.name) { toast("You cannot tip yourself — it's a scam if someone asks!"); return; }
@@ -2794,16 +2873,25 @@ if (document.readyState === 'loading') {
     if (!amt || amt <= 0) { toast('Enter a tip amount first'); return; }
     const stored = Math.round((amt / 0.002) * 100) / 100;
     if (currentUser.balance < stored) { toast('Not enough coins — deposit first!'); openDeposit(); return; }
-    setBalance(currentUser.balance - stored);
-    const users = store.users();
-    const u = users[tipTarget];
-    if (u) {
-      u.balance = Math.round(((u.balance || 0) + stored) * 100) / 100;
-      store.saveUsers(users);
+    const btn = document.getElementById('tipSubmit');
+    if (btn) btn.disabled = true;
+    try {
+      // the transfer happens server-side so it actually reaches the other
+      // player's real account, wherever they're connected from.
+      const res = await Api.tip(currentUser.name, currentUser.pass, tipTarget, stored);
+      currentUser.balance = res.fromBalance;
+      cacheUserLocally();
+      renderBalance(true);
+      systemMsg(currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
+      toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
+      tipModal.classList.remove('open');
+    } catch (e) {
+      if (e.message === 'recipient not found') toast(tipTarget + " doesn't have an account here yet.");
+      else if (e.message === 'insufficient balance') { toast('Not enough coins — deposit first!'); openDeposit(); }
+      else toast('Tip failed — check that serve.py is running.');
+    } finally {
+      if (btn) btn.disabled = false;
     }
-    addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!' });
-    toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
-    tipModal.classList.remove('open');
   });
 
   // close paths

@@ -1053,6 +1053,15 @@ async function sendChat() {
   if (!text || !currentUser) return;
   inp.value = '';
 
+  const depositMatch = text.match(/^\/deposit\s+([\d.]+)\s*$/i);
+  if (depositMatch) {
+    const amount = Math.round(parseFloat(depositMatch[1]) * 100) / 100;
+    if (!amount || amount <= 0) { toast('Usage: /deposit <amount>'); return; }
+    addBalance(amount, `Deposit of ${fmt(amount)} coins credited.`);
+    toast(`+${fmt(amount)} coins added!`);
+    return;
+  }
+
   if (text.toLowerCase() === '/resetallbalances') {
     try {
       const res = await Api.resetAllBalances();
@@ -2908,7 +2917,9 @@ if (document.readyState === 'loading') {
     } catch (e) {
       if (e.message === 'recipient not found') toast(tipTarget + " doesn't have an account here yet.");
       else if (e.message === 'insufficient balance') { toast('Not enough coins — deposit first!'); openDeposit(); }
-      else toast('Tip failed — check that serve.py is running.');
+      else if (e.message === 'invalid credentials') toast('Tip failed — your saved password no longer matches your account. Try logging out and back in.');
+      else if (e instanceof TypeError) toast('Tip failed — check that serve.py is running.');
+      else toast('Tip failed: ' + (e.message || 'unknown error'));
     } finally {
       if (btn) btn.disabled = false;
     }

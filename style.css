@@ -94,8 +94,8 @@ a{color:inherit;text-decoration:none}
 .nav-balance-slot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center}
 @media (max-width:760px){.nav-balance-slot{display:none}}
 .nav-balance{position:relative}
-.balance-pill{display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#132241,#101c36);border:none;border-radius:var(--r-sm);padding:8px 14px;font-size:13.5px;box-shadow:inset 0 0 0 1px var(--edge),0 0 16px rgba(47,128,255,.16);transition:box-shadow var(--dur-slow) var(--ease),transform var(--dur) var(--ease)}
-.balance-pill:hover{box-shadow:inset 0 0 0 1px var(--edge-hover),0 0 26px rgba(47,128,255,.4);transform:translateY(-1.5px)}
+.balance-pill{display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#132241,#101c36);border:none;border-radius:var(--r-sm);padding:8px 14px;font-size:13.5px;box-shadow:inset 0 0 0 1px var(--edge),0 0 16px rgba(47,128,255,.16);transition:box-shadow var(--dur-slow) var(--ease),transform var(--dur) var(--ease);cursor:default}
+.balance-pill:hover{box-shadow:inset 0 0 0 1px var(--edge),0 0 16px rgba(47,128,255,.16);transform:none}
 .pill-coin{filter:drop-shadow(0 0 6px rgba(90,160,255,.5))}
 #balanceValue{font-weight:800;letter-spacing:.3px;font-variant-numeric:tabular-nums}
 .balance-pill .cur-code{font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--text-dim);background:rgba(255,255,255,.06);padding:2px 6px;border-radius:var(--r-2xs)}

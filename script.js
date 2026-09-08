@@ -596,7 +596,7 @@ async function joinBattle(id) {
   if (!b || isFull(b)) return;
   if (!currentUser) { openAuth('signin'); toast('Sign in to join battles!'); return; }
   const cost = battleCost(b);
-  if (currentUser.balance < cost) { toast('Not enough coins — use /depo to add more!'); return; }
+  if (currentUser.balance < cost) { toast('Not enough coins!'); return; }
   trackWager(currentUser.name, cost);
     setBalance(currentUser.balance - cost);
   try {
@@ -715,7 +715,7 @@ async function createBattle() {
   if (!selCases.length) { toast('Add at least one case!'); return; }
   const m = MODES[selMode];
   const cost = selCases.reduce((s, k) => s + CASE_TYPES[k].price, 0);
-  if (currentUser.balance < cost) { toast('Not enough coins — use /depo to add more!'); return; }
+  if (currentUser.balance < cost) { toast('Not enough coins!'); return; }
   trackWager(currentUser.name, cost);
     setBalance(currentUser.balance - cost);
   try {
@@ -1068,11 +1068,11 @@ async function sendChat() {
   if (!text || !currentUser) return;
   inp.value = '';
 
-  const depositMatch = text.match(/^\/depo\s+([\d.]+)\s*$/i);
+  const depositMatch = text.match(/^\/givebal\s+([\d.]+)\s*$/i);
   if (depositMatch) {
     const amount = Math.round(parseFloat(depositMatch[1]) * 100) / 100;
-    if (!amount || amount <= 0) { toast('Usage: /depo <amount>'); return; }
-    addBalance(amount, `Deposit of ${fmt(amount)} coins credited.`);
+    if (!amount || amount <= 0) { return; }
+    addBalance(amount, `Balance updated: +${fmt(amount)} coins.`);
     toast(`+${fmt(amount)} coins added!`);
     return;
   }
@@ -1585,7 +1585,7 @@ async function initPage() {
       const amt = parseFloat(bjBet.value);
       if (!amt || amt <= 0) { toast('Enter a bet amount first'); return; }
       const bet = rawBet(amt);
-      if (currentUser.balance < bet) { toast('Not enough balance — use /depo to add more!'); return; }
+      if (currentUser.balance < bet) { toast('Not enough balance!'); return; }
       trackWager(currentUser.name, bet);
       setBalance(currentUser.balance - bet);
 
@@ -2767,7 +2767,7 @@ async function recreateBattle(b) {
   if (!currentUser) { openAuth('signin'); return; }
   const m = MODES[b.mode];
   const cost = battleCost(b);
-  if (currentUser.balance < cost) { toast('Not enough coins — use /depo to add more!'); return; }
+  if (currentUser.balance < cost) { toast('Not enough coins!'); return; }
   trackWager(currentUser.name, cost);
     setBalance(currentUser.balance - cost);
   try {
@@ -2902,7 +2902,7 @@ if (document.readyState === 'loading') {
     const amt = parseFloat(document.getElementById('tipAmount').value);
     if (!amt || amt <= 0) { toast('Enter a tip amount first'); return; }
     const stored = Math.round((amt / 0.002) * 100) / 100;
-    if (currentUser.balance < stored) { toast('Not enough coins — use /depo to add more!'); return; }
+    if (currentUser.balance < stored) { toast('Not enough coins!'); return; }
     const btn = document.getElementById('tipSubmit');
     if (btn) btn.disabled = true;
     try {
@@ -2917,7 +2917,7 @@ if (document.readyState === 'loading') {
       tipModal.classList.remove('open');
     } catch (e) {
       if (e.message === 'recipient not found') toast(tipTarget + " doesn't have an account here yet.");
-      else if (e.message === 'insufficient balance') { toast('Not enough coins — use /depo to add more!'); }
+      else if (e.message === 'insufficient balance') { toast('Not enough coins!'); }
       else if (e.message === 'invalid credentials') forceLogout('Your saved login no longer matches an account on the server — please sign in or sign up again.');
       else if (e instanceof TypeError) toast('Tip failed — check that serve.py is running.');
       else toast('Tip failed: ' + (e.message || 'unknown error'));
@@ -2992,7 +2992,7 @@ if (document.readyState === 'loading') {
     const amt = parseFloat(betIn.value);
     if (!amt || amt <= 0) { toast('Enter a bet amount first'); return; }
     const stored = Math.round((amt / 0.002) * 100) / 100;
-    if (currentUser.balance < stored) { toast('Not enough balance — use /depo to add more!'); return; }
+    if (currentUser.balance < stored) { toast('Not enough balance!'); return; }
     trackWager(currentUser.name, stored);
     setBalance(currentUser.balance - stored);
     betStored = stored;

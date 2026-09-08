@@ -233,6 +233,29 @@ function loadSession() {
   const name = store.session();
   const u = store.users();
   if (name && u[name]) currentUser = { name, ...u[name] };
+  reconcileWithServer();
+}
+
+// Runs once on page load for anyone already signed in (not just fresh
+// sign-ins). Registers the account on the shared server if it isn't there
+// yet, and picks up any tips received since the last visit — so nobody
+// has to manually re-sign-in for tipping to start working for them.
+async function reconcileWithServer() {
+  if (!currentUser) return;
+  const name = currentUser.name;
+  try {
+    const remote = await Api.getUser(name);
+    if (!currentUser || currentUser.name !== name) return; // user changed/logged out while awaiting
+    if (remote) {
+      if (remote.balance !== currentUser.balance) {
+        const wasLower = remote.balance > currentUser.balance;
+        setBalance(remote.balance);
+        if (wasLower) toast(`You received a tip while you were away!`);
+      }
+    } else {
+      Api.syncUser(name, currentUser.balance); // first time seen by this server — register it
+    }
+  } catch (e) {}
 }
 
 function persistUser() {
@@ -807,11 +830,7 @@ async function submitAuth() {
     toast(`Welcome back, ${name}!`);
     // Pick up any tips (or other balance changes) that landed on the shared
     // server while this account was signed out or used elsewhere.
-    Api.getUser(name).then((remote) => {
-      if (remote && currentUser && remote.name === currentUser.name && remote.balance !== currentUser.balance) {
-        setBalance(remote.balance);
-      }
-    }).catch(() => {});
+    reconcileWithServer();
   }
 }
 

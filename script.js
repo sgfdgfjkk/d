@@ -1071,7 +1071,6 @@ async function sendChat() {
         renderBalance(true);
       }
       toast(`Reset ${res.count} account balance(s) to 0.`);
-      addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: `${currentUser.name} reset everyone's balance to 0.` });
     } catch (e) {
       toast('Could not reset balances — check the server.');
     }

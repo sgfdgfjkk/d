@@ -349,8 +349,8 @@
             <i>Check Now</i>
           </div>
           <div class="dp-art">
-            <model-viewer class="dp-model" src="models/gold-dominus-hat.glb" alt="Gold Dominus"
-              auto-rotate auto-rotate-delay="0" rotation-per-second="90deg"
+            <model-viewer id="dpModel" class="dp-model" src="models/gold-dominus-hat.glb" alt="Gold Dominus"
+              auto-rotate auto-rotate-delay="0" rotation-per-second="220deg"
               camera-orbit="0deg 78deg 105%" field-of-view="28deg" interaction-prompt="none"
               disable-zoom shadow-intensity="0" exposure="1.1"></model-viewer>
           </div>
@@ -730,7 +730,12 @@
   <div class="modal ac-modal">
     <button class="modal-close" id="casesClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
     <div class="ac-head">
-      <div class="cbp-badge small"><svg class="chest gold" viewBox="0 0 120 96" width="24" height="19"><use href="#chest"/></svg></div>
+      <div class="cbp-badge small ac-badge-model">
+        <model-viewer class="ac-badge-mv" src="models/gold-dominus-hat.glb" alt="Gold Dominus"
+          auto-rotate auto-rotate-delay="0" rotation-per-second="18deg"
+          camera-orbit="0deg 78deg 105%" field-of-view="28deg" interaction-prompt="none"
+          disable-zoom shadow-intensity="0" exposure="1.1"></model-viewer>
+      </div>
       <div class="cbp-titlewrap"><h2 id="casesTitle">Add Cases</h2><span class="cbp-underline"></span></div>
     </div>
     <div class="ac-toolbar">

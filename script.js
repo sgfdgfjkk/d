@@ -274,6 +274,7 @@ const CASE_TYPES = {
   inferno: { name: 'Red Valk', price: 9000 },
   dominus: { name: 'Dominus Case', price: 18000 },
   galaxy:  { name: 'HUGEEE',  price: 45000 },
+  relic:   { name: 'The big one', price: 75000 },
 };
 const CASE_PALETTES = ['blue', 'pink', 'green', 'cyan', 'gold', 'red', 'purple', 'white', 'orange', 'kraken'];
 
@@ -284,6 +285,7 @@ const CASE_IMG = {
   inferno: { img: 'cases/case-red.png', c: '#ff5c4a' },
   dominus: { img: 'cases/case-purple.png', c: '#a86cff' },
   galaxy: { img: 'cases/case-gold.png', c: '#f2c94c' },
+  relic: { img: 'cases/download (4).png', c: '#c9a06c' },
 };
 function caseAccent(k) { return CASE_IMG[k] ? CASE_IMG[k].c : null; }
 function caseArt(k, keys) {
@@ -1505,7 +1507,7 @@ async function initPage() {
 const GOLD_ODDS = {
   kraken: 0.05,
   core: 0.10, blossom: 0.09, toxic: 0.08, frost: 0.07, winter: 0.06,
-  royal: 0.05, inferno: 0.045, dominus: 0.04, galaxy: 0.03
+  royal: 0.05, inferno: 0.045, dominus: 0.04, galaxy: 0.03, relic: 0.05
 };
 function goldOdds(caseKey) { return GOLD_ODDS[caseKey] || 0.05; }
 
@@ -1602,10 +1604,30 @@ const ITEM_POOLS = {
     { name: 'Winky', v: 200, w: 29.4, img: 'items/winky.png', c: '#5aa2ff' },
     { name: 'Gold Token', v: 100, w: 0.8, img: 'items/gold-token.png', c: '#ffd35c', token: true },
   ],
+  relic: [
+    { name: 'Wink Face', v: 1, w: 95, img: 'items/wink.png', c: '#7cc0ff' },
+    { name: 'Fedora Face', v: 14, w: 0.9, img: 'items/noFilter.png', c: '#c9a06c' },
+    { name: 'Classic Fedora', v: 20, w: 0.7, img: 'items/noFilter (1).png', c: '#b98d55' },
+    { name: 'Vintage Fedora', v: 30, w: 0.6, img: 'items/noFilter (2).png', c: '#a67c46' },
+    { name: 'Dominus Astra', v: 75, w: 0.9, img: 'items/noFilter (4).png', c: '#a86cff' },
+    { name: 'Dominus Empyreus', v: 95, w: 0.6, img: 'items/noFilter (5).png', c: '#8f4fff' },
+    { name: 'Gold Token', v: 100, w: 0.9, img: 'items/gold-token.png', c: '#ffd35c', token: true },
+  ],
 };
-// bump case item values so top-tier drops feel like real money (gold spin should actually hit big)
-for (const pool of Object.values(ITEM_POOLS)) {
-  pool.forEach((it) => { it.v = Math.round(it.v * 40); });
+// Scale each case's item pool so its weighted-average payout lands at a
+// target RTP of the case's real price (a normal house edge), instead of a
+// blanket ×40 that let cheap/expensive cases run at wildly different RTPs.
+// Driven entirely by each item's real w/v, so it self-corrects if you ever
+// tweak an item's odds or value.
+const CASE_RTP = 0.9; // average payout as a fraction of case price
+for (const [key, pool] of Object.entries(ITEM_POOLS)) {
+  const caseInfo = CASE_TYPES[key];
+  if (!caseInfo) continue; // pool isn't wired to a real, priced case — leave it alone
+  const totalW = pool.reduce((a, x) => a + (x.w || 1), 0);
+  const rawAvg = pool.reduce((a, x) => a + (x.v || 0) * (x.w || 1), 0) / totalW;
+  if (!rawAvg) continue;
+  const scale = (caseInfo.price * CASE_RTP) / rawAvg;
+  pool.forEach((it) => { it.v = Math.round(it.v * scale); });
 }
 function poolPcts(pool) {
   const total = pool.reduce((a, x) => a + (x.w || 1), 0);
@@ -2678,10 +2700,11 @@ if (document.readyState === 'loading') {
     const stored = Math.round((amt / 0.002) * 100) / 100;
     if (currentUser.balance < stored) { toast('Not enough coins — deposit first!'); openDeposit(); return; }
     setBalance(currentUser.balance - stored);
-    const u = store.users()[tipTarget];
+    const users = store.users();
+    const u = users[tipTarget];
     if (u) {
       u.balance = Math.round(((u.balance || 0) + stored) * 100) / 100;
-      store.saveUsers(store.users());
+      store.saveUsers(users);
     }
     addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!' });
     toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');

@@ -29,13 +29,12 @@ def load_data():
                 data = json.load(f)
                 data.setdefault("battles", {})
                 data.setdefault("chat", [])
-                data.setdefault("users", {})
                 data.setdefault("next_battle_id", 1)
                 data.setdefault("next_chat_id", 1)
                 return data
         except Exception:
             pass
-    return {"battles": {}, "chat": [], "users": {}, "next_battle_id": 1, "next_chat_id": 1}
+    return {"battles": {}, "chat": [], "next_battle_id": 1, "next_chat_id": 1}
 
 
 STATE = load_data()
@@ -116,17 +115,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 msgs = [m for m in STATE["chat"] if m["id"] > since]
                 latest = STATE["next_chat_id"] - 1
             return self._send_json({"messages": msgs, "latest": latest})
-
-        # GET /api/users/<name> -> shared balance lookup, used so tips (and
-        # cross-device logins) can find a player who isn't in this browser's
-        # own localStorage.
-        if len(parts_g := [p for p in parsed.path.split("/") if p]) == 3 and parts_g[0] == "api" and parts_g[1] == "users":
-            name = urllib.parse.unquote(parts_g[2])
-            with lock:
-                u = STATE["users"].get(name)
-            if not u:
-                return self._send_json({"error": "not found"}, 404)
-            return self._send_json({"name": name, "balance": u.get("balance", 0)})
 
         return super().do_GET()
 
@@ -223,44 +211,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     return self._send_json({"ok": True})
 
             return self._send_json({"error": "unknown action"}, 400)
-
-        # POST /api/users/<name>/sync -> upsert this player's balance so other
-        # players' browsers can find them (called after every local balance
-        # change: signup, deposit, bet, win, tip sent).
-        if len(parts) == 4 and parts[0] == "api" and parts[1] == "users" and parts[3] == "sync":
-            name = urllib.parse.unquote(parts[2])
-            data = self._read_json()
-            try:
-                balance = float(data.get("balance", 0))
-            except (TypeError, ValueError):
-                return self._send_json({"error": "invalid balance"}, 400)
-            with lock:
-                u = STATE["users"].setdefault(name, {})
-                u["balance"] = round(balance, 2)
-                save_data()
-            return self._send_json({"name": name, "balance": u["balance"]})
-
-        # POST /api/tip -> atomically credit a recipient's SHARED balance.
-        # The sender already deducted their own balance locally (and synced
-        # it above) — this is the piece that actually gets the coins to the
-        # other person, wherever their browser is.
-        if parsed.path == "/api/tip":
-            data = self._read_json()
-            to_name = str(data.get("to", "")).strip()
-            try:
-                amount = float(data.get("amount", 0))
-            except (TypeError, ValueError):
-                return self._send_json({"error": "invalid amount"}, 400)
-            if not to_name or amount <= 0:
-                return self._send_json({"error": "invalid tip"}, 400)
-            with lock:
-                u = STATE["users"].get(to_name)
-                if not u:
-                    return self._send_json({"error": "recipient not found"}, 404)
-                u["balance"] = round((u.get("balance", 0) + amount) * 1.0, 2)
-                save_data()
-                new_balance = u["balance"]
-            return self._send_json({"name": to_name, "balance": new_balance})
 
         # POST /api/chat -> post a chat message, visible to everyone
         if parsed.path == "/api/chat":

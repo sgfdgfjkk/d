@@ -274,6 +274,7 @@ const CASE_TYPES = {
   inferno: { name: 'Red Valk', price: 9000 },
   dominus: { name: 'Dominus Case', price: 18000 },
   galaxy:  { name: 'HUGEEE',  price: 45000 },
+  relic:   { name: 'The big one', price: 75000 },
 };
 const CASE_PALETTES = ['blue', 'pink', 'green', 'cyan', 'gold', 'red', 'purple', 'white', 'orange', 'kraken'];
 
@@ -284,7 +285,23 @@ const CASE_IMG = {
   inferno: { img: 'cases/case-red.png', c: '#ff5c4a' },
   dominus: { img: 'cases/case-purple.png', c: '#a86cff' },
   galaxy: { img: 'cases/case-gold.png', c: '#f2c94c' },
+  relic: { img: 'cases/download (4).png', c: '#c9a06c' },
 };
+// lights up the case row in the battle viewer so players can see exactly
+// which case is on deck without counting rounds themselves. activeIdx is the
+// 0-based index of the case currently spinning; -1 means none has started
+// yet (still waiting on players); allDone marks every case as finished.
+function updateCaseProgress(activeIdx, total, allDone) {
+  const row = document.getElementById('bvCasesRow');
+  if (!row) return;
+  const thumbs = row.querySelectorAll('.bv-case-thumb');
+  thumbs.forEach((el, i) => {
+    el.classList.remove('cr-active', 'cr-done', 'cr-upcoming');
+    if (allDone || i < activeIdx) el.classList.add('cr-done');
+    else if (i === activeIdx) el.classList.add('cr-active');
+    else el.classList.add('cr-upcoming');
+  });
+}
 function caseAccent(k) { return CASE_IMG[k] ? CASE_IMG[k].c : null; }
 function caseArt(k, keys) {
   if (CASE_IMG[k]) return '<img class="case-img" src="' + CASE_IMG[k].img + '" alt="">';
@@ -719,7 +736,13 @@ function renderRoute() {
     if (!b && finishedBattles[liveId]) { renderRecap(liveId); window.scrollTo(0, 0); return; }
     if (!b) { location.hash = '#/case-battles'; return; }
     viewerB = b; // the viewer must own the battle or the spin loop aborts
-    if (!b.played) renderLive(b);
+    // only (re)start the round if it isn't already running — renderLive()
+    // wipes every pending timer via clearLiveTimers() on entry, so calling
+    // it again for a battle that's already mid-round (e.g. you navigated
+    // to the lobby and clicked back in) kills the spin loop dead: timers
+    // gone, and the b._counting guard inside renderLive stops it from
+    // scheduling new ones, so it just sits frozen until a page refresh
+    if (!b.played && !b._counting) renderLive(b);
   }
   window.scrollTo(0, 0);
 }
@@ -990,6 +1013,47 @@ setInterval(() => {
 /* ---------- chat now syncs from the server ---------- */
 setInterval(pollChat, 1500);
 
+/* ---------- daily-case promo: cycling 3d model pop ---------- */
+function initDpModelCycle() {
+  const mv = $('#dpModel');
+  if (!mv || mv.__cycling) return;
+  mv.__cycling = true;
+
+  const MODELS = [
+    'models/gold-dominus-hat.glb',
+    'models/magic3d_pbr_model_3c4622a2-0146-42d0-85f5-f58a3edb8e4b.glb',
+    'models/magic3d_pbr_model_39b24bbc-b7a5-4781-be29-787002a133a5.glb',
+  ];
+
+  const SPIN_MS = 1200;   // how long each model stays visible & spinning
+  const OUT_MS = 320;     // shrink-away duration (matches CSS)
+  const IN_MS = 500;      // pop-in duration (matches CSS)
+
+  let i = 0;
+
+  function showNext() {
+    i = (i + 1) % MODELS.length;
+
+    mv.classList.remove('dp-model-in');
+    mv.classList.add('dp-model-out');
+
+    setTimeout(() => {
+      mv.src = MODELS[i];
+      mv.classList.remove('dp-model-out');
+      // force reflow so the pop-in animation restarts every time
+      void mv.offsetWidth;
+      mv.classList.add('dp-model-in');
+
+      setTimeout(() => {
+        mv.classList.remove('dp-model-in');
+        setTimeout(showNext, SPIN_MS);
+      }, IN_MS);
+    }, OUT_MS);
+  }
+
+  setTimeout(showNext, SPIN_MS);
+}
+
 /* ================================================================
    INIT & WIRING
    ================================================================ */
@@ -1008,6 +1072,7 @@ async function initPage() {
   renderPv();
   renderFeatured();
   initSparkles(document.querySelector('.dash-promo'), 26);
+  initDpModelCycle();
   initSparkles(document.querySelector('.rain-widget'), 12);
   initSparkles(document.querySelector('.discord-strip'), 16);
   window.__steps.push('renders-done');
@@ -1505,7 +1570,7 @@ async function initPage() {
 const GOLD_ODDS = {
   kraken: 0.05,
   core: 0.10, blossom: 0.09, toxic: 0.08, frost: 0.07, winter: 0.06,
-  royal: 0.05, inferno: 0.045, dominus: 0.04, galaxy: 0.03
+  royal: 0.05, inferno: 0.045, dominus: 0.04, galaxy: 0.03, relic: 0.05
 };
 function goldOdds(caseKey) { return GOLD_ODDS[caseKey] || 0.05; }
 
@@ -1602,10 +1667,30 @@ const ITEM_POOLS = {
     { name: 'Winky', v: 200, w: 29.4, img: 'items/winky.png', c: '#5aa2ff' },
     { name: 'Gold Token', v: 100, w: 0.8, img: 'items/gold-token.png', c: '#ffd35c', token: true },
   ],
+  relic: [
+    { name: 'Wink Face', v: 1, w: 95, img: 'items/wink.png', c: '#7cc0ff' },
+    { name: 'Fedora Face', v: 14, w: 0.9, img: 'items/noFilter.png', c: '#c9a06c' },
+    { name: 'Classic Fedora', v: 20, w: 0.7, img: 'items/noFilter (1).png', c: '#b98d55' },
+    { name: 'Vintage Fedora', v: 30, w: 0.6, img: 'items/noFilter (2).png', c: '#a67c46' },
+    { name: 'Dominus Astra', v: 75, w: 0.9, img: 'items/noFilter (4).png', c: '#a86cff' },
+    { name: 'Dominus Empyreus', v: 95, w: 0.6, img: 'items/noFilter (5).png', c: '#8f4fff' },
+    { name: 'Gold Token', v: 100, w: 0.9, img: 'items/gold-token.png', c: '#ffd35c', token: true },
+  ],
 };
-// bump case item values so top-tier drops feel like real money (gold spin should actually hit big)
-for (const pool of Object.values(ITEM_POOLS)) {
-  pool.forEach((it) => { it.v = Math.round(it.v * 40); });
+// Scale each case's item pool so its weighted-average payout lands at a
+// target RTP of the case's real price (a normal house edge), instead of a
+// blanket ×40 that let cheap/expensive cases run at wildly different RTPs.
+// Driven entirely by each item's real w/v, so it self-corrects if you ever
+// tweak an item's odds or value.
+const CASE_RTP = 0.9; // average payout as a fraction of case price
+for (const [key, pool] of Object.entries(ITEM_POOLS)) {
+  const caseInfo = CASE_TYPES[key];
+  if (!caseInfo) continue; // pool isn't wired to a real, priced case — leave it alone
+  const totalW = pool.reduce((a, x) => a + (x.w || 1), 0);
+  const rawAvg = pool.reduce((a, x) => a + (x.v || 0) * (x.w || 1), 0) / totalW;
+  if (!rawAvg) continue;
+  const scale = (caseInfo.price * CASE_RTP) / rawAvg;
+  pool.forEach((it) => { it.v = Math.round(it.v * scale); });
 }
 function poolPcts(pool) {
   const total = pool.reduce((a, x) => a + (x.w || 1), 0);
@@ -1799,7 +1884,7 @@ function spinCardHtml(it, w) {
 
 function lootCardHtml(it) {
   if (it.token) {
-    return `<div class="loot-card token"><img class="it-img" src="${it.img}" alt=""></div>`;
+    return `<div class="loot-card token">${tokenModelHtml()}</div>`;
   }
   const visual = it.img
     ? `<img class="it-img" src="${it.img}" alt="">`
@@ -1822,9 +1907,15 @@ function spawnConfetti() {
   c.innerHTML = html;
 }
 
+function tokenModelHtml(cls) {
+  return `<model-viewer class="token-model${cls ? ' ' + cls : ''}" src="models/robux.glb"
+    camera-orbit="0deg 78deg 105%" field-of-view="26deg" interaction-prompt="none"
+    disable-zoom shadow-intensity="0" exposure="1.15"></model-viewer>`;
+}
+
 function miniItem(it) {
   if (it.token) {
-    return `<div class="mini-item token"><img class="it-img" src="${it.img}" alt=""></div>`;
+    return `<div class="mini-item token">${tokenModelHtml('mi-token-model')}</div>`;
   }
   const visual = it.img
     ? `<img class="it-img" src="${it.img}" alt="">`
@@ -1911,6 +2002,15 @@ function renderLive(b) {
   if (staleStage) staleStage.classList.remove('gold-round', 'stage-done');
   const staleConf = document.getElementById('bvConfetti');
   if (staleConf) staleConf.innerHTML = '';
+  // the jackpot wheel from the PREVIOUS battle can get stuck visible: if you
+  // navigate to a new battle while its hide-after-settle timer is still
+  // pending, clearLiveTimers() above wipes that timeout before it ever sets
+  // wheelEl.hidden = true, so the old wheel (old names/pot/%s) was still
+  // sitting on screen over the new battle. Force it closed on every fresh render.
+  const staleWheel = document.getElementById('jackpotWheel');
+  if (staleWheel) { staleWheel.hidden = true; staleWheel.classList.remove('settled'); }
+  const staleTrack = document.getElementById('jwTrack');
+  if (staleTrack) staleTrack.innerHTML = '';
   const m = MODES[b.mode];
   const players = [];
   const teamOf = [];
@@ -1927,8 +2027,9 @@ function renderLive(b) {
   $('#bvMode').textContent = m.label;
   $('#bvTypeL').textContent = b.type === 'jackpot' ? 'Jackpot' : 'Normal';
   $('#bvSeed').textContent = 'Seed ' + b.seed;
-  $('#bvCasesRow').innerHTML = b.cases.map((k) => `
-    <span class="bv-case-thumb">${caseArt(k, cKeys)}</span>`).join('');
+  $('#bvCasesRow').innerHTML = b.cases.map((k, idx) => `
+    <span class="bv-case-thumb" title="Round ${idx + 1} — ${CASE_TYPES[k].name}">${caseArt(k, cKeys)}</span>`).join('');
+  updateCaseProgress(-1, nR, false);
   $('#bvSound').textContent = AudioFX.on ? 'Sound On' : 'Sound Off';
   $('#bvBalance').textContent = currentUser ? fmt(currentUser.balance) : '0.00';
   const pot0 = document.getElementById('bvPot');
@@ -1959,9 +2060,18 @@ function renderLive(b) {
   // battle is full — if we've already started (or are mid-countdown) for THIS
   // fill, don't restart; otherwise run the 3-2-1 countdown once, then begin.
   if (b.played || b._counting) return;
-  if (seenHas(b.id) || b.started) {
-    // this battle already spun somewhere else (another tab / player / before a
-    // reload) — resolve it instantly so payouts + results stay in sync
+  if (seenHas(b.seed)) {
+    // THIS browser already watched this exact battle play out (e.g. a second
+    // tab) — resolve it instantly so payouts + results stay in sync. Note:
+    // b.started alone used to trigger this same instant-finish path too, but
+    // b.started just means "the countdown began at some point" (it's stamped
+    // the moment the 3-2-1 starts and saved to the server) — it does NOT mean
+    // the spin ever finished. That meant refreshing mid-battle looked like
+    // "someone else already played it", so the battle got resolved and
+    // deleted (via completeBattle) the instant the page reloaded, before you
+    // ever saw the animation. Since results are fully seeded from b.seed,
+    // there's no need to short-circuit on refresh at all — see the
+    // `resuming` branch below, which just replays the (identical) spin.
     b.played = true;
     var rec = finishedBattles[b.id];
     if (!rec) {
@@ -1973,7 +2083,7 @@ function renderLive(b) {
       renderBattlesIfVisible();
       Api.completeBattle(b.id);
       const battleHasMe = b.teams.some(function (team) { return team.some(function (p) { return p && p.you; }); });
-      const paidKey = 'rbxwin_paid_' + b.id;
+      const paidKey = 'rbxwin_paid_' + b.seed;
       let alreadyPaid = false;
       try { alreadyPaid = !!localStorage.getItem(paidKey); } catch (e) {}
       if (battleHasMe && !alreadyPaid) {
@@ -1988,6 +2098,7 @@ function renderLive(b) {
           : 'Battle finished - ' + res.winners.map(function (p) { return p.n; }).join(' & ') + ' won ' + fmt(res.share) + '!' });
       }
     }
+    updateCaseProgress(-1, nR, true);
     document.getElementById('bvStage').classList.add('stage-done');
     var wElSeen = document.getElementById('bvWinner');
     wElSeen.innerHTML = '<div class="bv-win-title">Battle Finished</div>' +
@@ -1999,31 +2110,44 @@ function renderLive(b) {
     document.getElementById('bvSeenBack').addEventListener('click', function () { location.hash = '#/case-battles'; });
     return;
   }
+  // b.started already being set here means the countdown ran once before
+  // (this same client, before a page reload) — don't make the player sit
+  // through "3, 2, 1" a second time, just go straight into the spin. The
+  // spin itself is fully seeded from b.seed, so this reproduces exactly
+  // the same outcome as if the countdown had never been interrupted.
+  const resuming = !!b.started;
   b._counting = true;
   if (!b.started) { b.started = Date.now(); Api.markStarted(b.id); }
   $('#bvRound').textContent = `Round 1 of ${nR}`;
   $('#bvRound').classList.remove('goldtxt');
   if (countEl) countEl.hidden = true;
 
-  let n = 3;
-  const countdownTick = () => {
-    if (viewerB !== b || b.done) { b._counting = false; if (countEl) countEl.hidden = true; return; }
-    if (countEl) { countEl.hidden = false; countEl.textContent = n; countEl.classList.remove('pop'); void countEl.offsetWidth; countEl.classList.add('pop'); }
-    AudioFX.tick();
-    n--;
-    if (n > 0) {
-      liveTimers.push(setTimeout(countdownTick, 900));
-    } else {
-      liveTimers.push(setTimeout(() => {
-        if (countEl) countEl.hidden = true;
-        b._counting = false;
-        b.played = true;
-        seenMark(b.id);
-        beginRound();
-      }, 800));
-    }
-  };
-  countdownTick();
+  if (resuming) {
+    b._counting = false;
+    b.played = true;
+    seenMark(b.seed);
+    beginRound();
+  } else {
+    let n = 3;
+    const countdownTick = () => {
+      if (viewerB !== b || b.done) { b._counting = false; if (countEl) countEl.hidden = true; return; }
+      if (countEl) { countEl.hidden = false; countEl.textContent = n; countEl.classList.remove('pop'); void countEl.offsetWidth; countEl.classList.add('pop'); }
+      AudioFX.tick();
+      n--;
+      if (n > 0) {
+        liveTimers.push(setTimeout(countdownTick, 900));
+      } else {
+        liveTimers.push(setTimeout(() => {
+          if (countEl) countEl.hidden = true;
+          b._counting = false;
+          b.played = true;
+          seenMark(b.seed);
+          beginRound();
+        }, 800));
+      }
+    };
+    countdownTick();
+  }
 
   function beginRound() {
   $('#bvWinner').hidden = true;
@@ -2253,6 +2377,7 @@ function renderLive(b) {
     if (!alive()) return;
     document.getElementById('bvRound').textContent = 'Battle Finished';
     document.getElementById('bvRound').classList.add('goldtxt');
+    updateCaseProgress(-1, nR, true);
     pot = Math.round(totals.reduce(function (a, v) { return a + v; }, 0) * 100) / 100;
     var potEl = document.getElementById('bvPot'); if (potEl) potEl.textContent = fmt(pot);
 
@@ -2296,7 +2421,7 @@ function renderLive(b) {
     systemMsg('Battle finished - ' + names + ' won ' + fmt(share) + '!');
     Api.completeBattle(b.id);
     finishedBattles[b.id] = { b: b, totals: totals.slice(), bags: bags.map(function (x) { return x.slice(); }), winners: winners, share: share };
-    try { localStorage.setItem('rbxwin_paid_' + b.id, '1'); } catch (e) {}
+    try { localStorage.setItem('rbxwin_paid_' + b.seed, '1'); } catch (e) {}
     const userWon = winners.some(function (p) { return p.you; });
     if (battleHasUser(b)) {
       if (userWon) {
@@ -2327,9 +2452,10 @@ function renderLive(b) {
     $('#bvMode').textContent = m.label;
     $('#bvTypeL').textContent = b.type === 'jackpot' ? 'Jackpot' : 'Normal';
     $('#bvSeed').textContent = 'Seed ' + b.seed;
-    $('#bvCasesRow').innerHTML = b.cases.map(function (k) {
-      return '<span class="bv-case-thumb">' + caseArt(k, cKeys2) + '</span>';
+    $('#bvCasesRow').innerHTML = b.cases.map(function (k, idx) {
+      return '<span class="bv-case-thumb" title="Round ' + (idx + 1) + ' — ' + CASE_TYPES[k].name + '">' + caseArt(k, cKeys2) + '</span>';
     }).join('');
+    updateCaseProgress(-1, b.cases.length, true);
     $('#bvRound').textContent = 'Battle Finished';
     $('#bvRound').classList.add('goldtxt');
     $('#bvSound').textContent = AudioFX.on ? 'Sound On' : 'Sound Off';
@@ -2384,6 +2510,7 @@ function renderLive(b) {
     document.getElementById('bvRound').textContent = 'Round ' + (ri + 1) + ' of ' + nR;
     document.getElementById('bvRound').classList.remove('goldtxt');
     document.getElementById('bvStage').classList.remove('gold-round');
+    updateCaseProgress(ri, nR, false);
     players.forEach(function (_, i) {
       var c = document.getElementById('pcol' + i);
       if (c) c.classList.remove('gold-turn', 'gold-hit');
@@ -2413,21 +2540,67 @@ function renderLive(b) {
         if (!it.token) updateLastPull(i, it);
         if (it.token) {
           pending++;
-          var strip = document.getElementById('pstrip' + i);
-          var cards = strip.querySelectorAll('.mini-item');
-          var last = cards[cards.length - 1];
-          if (last) last.classList.add('token-hit');
           AudioFX.gold();
-          // let the coin finish its flip before the reel starts spinning
-          liveTimers.push(setTimeout(function () {
-            goldContinue(i, it, function () { pending--; advance(); });
-          }, 550));
+          var strip = document.getElementById('pstrip' + i);
+          // the reel is [won items] + [16 filler] + [landed item] + [3 tail
+          // filler] — the landed card is 4th from the end, NOT lastElementChild
+          // (that was grabbing a tail filler card, which almost never had a
+          // model-viewer on it, so the token spin silently no-op'd and jumped
+          // straight to the good-item reel)
+          var landedCard = strip && strip.children[strip.children.length - 4];
+          if (landedCard) landedCard.classList.add('token-hit');
+          var modelEl = landedCard && landedCard.querySelector('model-viewer');
+          spinTokenModel(modelEl, 1.9, function () {
+            // hold on the settled gold token for a beat before it dumps into
+            // the good-item reel — gives the win a second to register instead
+            // of instantly cutting away
+            liveTimers.push(setTimeout(function () {
+              goldContinue(i, it, function () { pending--; advance(); });
+            }, 350));
+          });
           return;
         }
         addLoot(i, it);
       });
       advance();
     }, 5350));
+  };
+
+  // spins a token's own 3D model in place — fast start, easing down to a
+  // stop — right on the card that just landed, no separate overlay.
+  //
+  // NOTE: this used to drive model-viewer's own `.orientation` property,
+  // but that depends on the model having finished loading and on
+  // model-viewer's internal reactivity actually picking up the change —
+  // which was unreliable here and is why it only ever looked like a small
+  // "pop" (that's the .token-hit CSS pop/glow, a separate effect) instead
+  // of an actual spin. Driving a plain CSS `rotateY` transform on the
+  // element itself sidesteps all of that: it's a normal DOM transform, it
+  // renders immediately regardless of model load state, and it's not
+  // dependent on any model-viewer internals working correctly.
+  const spinTokenModel = function (modelEl, duration, cb) {
+    if (!modelEl) { cb(); return; }
+    var spins = 6;
+    var wrap = modelEl.parentElement;
+    if (wrap) wrap.style.perspective = '600px';
+    modelEl.style.transformStyle = 'preserve-3d';
+    modelEl.style.backfaceVisibility = 'visible';
+    modelEl.style.willChange = 'transform';
+    var start = performance.now();
+    var durMs = duration * 1000;
+    var ease = function (t) { return 1 - Math.pow(1 - t, 3); };
+    var step = function () {
+      if (!alive()) { cb(); return; }
+      var t = Math.min(1, (performance.now() - start) / durMs);
+      var deg = spins * 360 * ease(t);
+      modelEl.style.transform = 'rotateY(' + deg + 'deg)';
+      // also keep nudging the model's own internal orientation, in case
+      // model-viewer picks it up — harmless bonus, not load-bearing
+      try { modelEl.orientation = '0deg 0deg ' + deg + 'deg'; } catch (e) {}
+      if (t < 1) liveTimers.push(setTimeout(step, 16));
+      else liveTimers.push(setTimeout(cb, 150));
+    };
+    step();
   };
 
   // gold spin: the token holder's reel keeps spinning down into the good items
@@ -2457,7 +2630,12 @@ function renderLive(b) {
     strip.style.transform = 'translateY(' + target + 'px)';
     attachCenterTicks([strip], 4.4);
     liveTimers.push(setTimeout(function () {
-      totals[i] += prize.v;
+      // the token itself already bumped totals[i] (and the live pot) by
+      // it.v back in playRound when it landed — that token slot is being
+      // replaced by the actual gold prize now, so back that placeholder
+      // value out before adding the real prize value, or the pot double
+      // counts every gold spin (token value AND prize value both stick)
+      totals[i] += prize.v - it.v;
       bags[i][bags[i].length - 1] = prize;
       var t = document.getElementById('tot' + i); if (t) t.textContent = fmt(totals[i]);
       updateJackpotPcts();
@@ -2617,10 +2795,11 @@ if (document.readyState === 'loading') {
     const stored = Math.round((amt / 0.002) * 100) / 100;
     if (currentUser.balance < stored) { toast('Not enough coins — deposit first!'); openDeposit(); return; }
     setBalance(currentUser.balance - stored);
-    const u = store.users()[tipTarget];
+    const users = store.users();
+    const u = users[tipTarget];
     if (u) {
       u.balance = Math.round(((u.balance || 0) + stored) * 100) / 100;
-      store.saveUsers(store.users());
+      store.saveUsers(users);
     }
     addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!' });
     toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
@@ -2768,7 +2947,6 @@ if (document.readyState === 'loading') {
     renderMults();
     if (picks >= tiles() - mines) cashout(); // cleared the whole board
   });
-
 
   // bet quick buttons — same units as blackjack
   document.querySelectorAll('.mn-quick button').forEach((btn) => btn.addEventListener('click', () => {

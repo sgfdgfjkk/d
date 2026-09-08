@@ -206,6 +206,24 @@ const Api = {
     if (!r.ok) throw new Error('chat post failed');
     return r.json();
   },
+  async getUser(name) {
+    const r = await fetch(`/api/users/${encodeURIComponent(name)}`);
+    if (!r.ok) return null;
+    return r.json();
+  },
+  async syncUser(name, balance) {
+    try {
+      await fetch(`/api/users/${encodeURIComponent(name)}/sync`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ balance }),
+      });
+    } catch (e) {}
+  },
+  async tip(to, amount) {
+    const r = await fetch('/api/tip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to, amount }) });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(body.error || 'tip failed');
+    return body;
+  },
 };
 
 let currentUser = null;
@@ -222,6 +240,10 @@ function persistUser() {
   const u = store.users();
   u[currentUser.name] = { pass: currentUser.pass, balance: currentUser.balance, created: currentUser.created };
   store.saveUsers(u);
+  // Mirror the balance to the shared server so other players (on their own
+  // browsers/devices) can find this account — this is what makes tipping,
+  // and cross-device sign-in, actually work.
+  Api.syncUser(currentUser.name, currentUser.balance);
 }
 
 function animateCount(el, from, to, ms = 550) {
@@ -770,6 +792,7 @@ async function submitAuth() {
     store.saveUsers(users);
     currentUser = { name, ...users[name] };
     store.setSession(name);
+    Api.syncUser(name, currentUser.balance); // register on the shared server so others can tip this account
     $('#authModal').classList.remove('open');
     renderNav();
     toast(`Welcome, ${name} — 100.00 coins claimed!`);
@@ -782,6 +805,13 @@ async function submitAuth() {
     $('#authModal').classList.remove('open');
     renderNav();
     toast(`Welcome back, ${name}!`);
+    // Pick up any tips (or other balance changes) that landed on the shared
+    // server while this account was signed out or used elsewhere.
+    Api.getUser(name).then((remote) => {
+      if (remote && currentUser && remote.name === currentUser.name && remote.balance !== currentUser.balance) {
+        setBalance(remote.balance);
+      }
+    }).catch(() => {});
   }
 }
 
@@ -991,6 +1021,23 @@ setInterval(() => {
 
 /* ---------- chat now syncs from the server ---------- */
 setInterval(pollChat, 1500);
+
+/* ---------- pick up tips (and other shared-balance changes) live ---------- */
+async function pollOwnBalance() {
+  if (!currentUser) return;
+  try {
+    const remote = await Api.getUser(currentUser.name);
+    if (remote && currentUser && remote.name === currentUser.name && remote.balance > currentUser.balance) {
+      const gained = Math.round((remote.balance - currentUser.balance) * 100) / 100;
+      currentUser.balance = remote.balance;
+      const u = store.users();
+      if (u[currentUser.name]) { u[currentUser.name].balance = remote.balance; store.saveUsers(u); }
+      renderBalance(true);
+      toast(`You received a tip of ${fmt(gained)} coins!`);
+    }
+  } catch (e) {}
+}
+setInterval(pollOwnBalance, 4000);
 
 /* ================================================================
    INIT & WIRING
@@ -2691,7 +2738,7 @@ if (document.readyState === 'loading') {
     setTimeout(() => document.getElementById('tipAmount').focus(), 120);
   }
 
-  document.getElementById('tipSubmit').addEventListener('click', () => {
+  document.getElementById('tipSubmit').addEventListener('click', async () => {
     if (!tipTarget) return;
     if (!currentUser) { openAuth('signin'); toast('Sign in to tip!'); return; }
     if (tipTarget === currentUser.name) { toast("You cannot tip yourself — it's a scam if someone asks!"); return; }
@@ -2699,16 +2746,25 @@ if (document.readyState === 'loading') {
     if (!amt || amt <= 0) { toast('Enter a tip amount first'); return; }
     const stored = Math.round((amt / 0.002) * 100) / 100;
     if (currentUser.balance < stored) { toast('Not enough coins — deposit first!'); openDeposit(); return; }
-    setBalance(currentUser.balance - stored);
-    const users = store.users();
-    const u = users[tipTarget];
-    if (u) {
-      u.balance = Math.round(((u.balance || 0) + stored) * 100) / 100;
-      store.saveUsers(users);
+    const submitBtn = document.getElementById('tipSubmit');
+    submitBtn.disabled = true;
+    try {
+      // Credit the recipient on the shared server FIRST — their balance
+      // lives in their own browser's storage, not ours, so this is the
+      // only way the coins actually reach them. Only deduct locally once
+      // that succeeds, so a failed/unknown tip never disappears.
+      await Api.tip(tipTarget, stored);
+      setBalance(currentUser.balance - stored);
+      addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!' });
+      toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
+      tipModal.classList.remove('open');
+    } catch (e) {
+      toast(e.message === 'recipient not found'
+        ? `${tipTarget} hasn't signed in on this server yet — ask them to sign up first.`
+        : 'Tip failed — check the server and try again.');
+    } finally {
+      submitBtn.disabled = false;
     }
-    addMessage({ av: 'trump', n: 'System', system: true, sys: true, text: currentUser.name + ' tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!' });
-    toast('Tipped ' + tipTarget + ' ' + fmt(stored) + ' coins!');
-    tipModal.classList.remove('open');
   });
 
   // close paths

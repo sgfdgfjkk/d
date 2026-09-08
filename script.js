@@ -2888,7 +2888,17 @@ if (document.readyState === 'loading') {
     } catch (e) {
       if (e.message === 'recipient not found') toast(tipTarget + " doesn't have an account here yet.");
       else if (e.message === 'insufficient balance') { toast('Not enough coins — deposit first!'); openDeposit(); }
-      else toast('Tip failed — check that serve.py is running.');
+      else if (e.message === 'invalid credentials') {
+        // the browser thinks we're signed in, but the server has no matching
+        // account (fresh/reset data file, or a stale cached password) —
+        // force back to sign-in instead of blaming serve.py for this.
+        currentUser = null;
+        store.setSession(null);
+        tipModal.classList.remove('open');
+        openAuth('signin');
+        toast('Your session is out of date — please sign in again.');
+      }
+      else toast('Tip failed (' + (e.message || 'unknown error') + ') — check that serve.py is running.');
     } finally {
       if (btn) btn.disabled = false;
     }

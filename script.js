@@ -964,7 +964,6 @@ function renderWelcome() {
         <div class="wb-level"><span>Current level</span><b>${lvl}</b></div>
         <button class="btn btn-primary btn-sm" id="promoCta">View Daily Rewards</button>
       </div>`;
-    host.querySelector('#promoCta').addEventListener('click', openDeposit);
   } else {
     host.innerHTML = `
       <span class="wb-avatar">${avatarSVG('astro')}</span>

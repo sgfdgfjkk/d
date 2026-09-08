@@ -882,7 +882,7 @@ function renderNav() {
   const slot = $('#navBalanceSlot');
   if (currentUser) {
     slot.innerHTML = `
-      <button class="balance-pill" id="balancePill" title="Your balance — click to deposit">
+      <button class="balance-pill" id="balancePill" title="Your balance — type /depo in chat to deposit">
         <svg class="pill-coin" viewBox="0 0 24 24" width="22" height="22"><use href="#coin"></use></svg>
         <b id="balanceValue">0.00</b>
       </button>`;
@@ -900,7 +900,8 @@ function renderNav() {
       </div>`;
     shownBalance = 0;
     renderBalance(false);
-    $('#balancePill').addEventListener('click', openDeposit);
+    // balance pill is now just a display — deposit modal opens via the
+    // /depo chat command instead of a click here.
     $('#userChip').addEventListener('click', (e) => {
       e.stopPropagation();
       $('#userDropdown').classList.toggle('open');
@@ -1049,6 +1050,12 @@ async function sendChat() {
   const text = inp.value.trim();
   if (!text || !currentUser) return;
   inp.value = '';
+  // secret-ish slash command: typing /depo opens the deposit modal instead
+  // of posting a chat message (this replaces the old click-the-balance flow).
+  if (/^\/depo(sit)?\b/i.test(text)) {
+    openDeposit();
+    return;
+  }
   try {
     const msg = await Api.postChat({ av: avatarFor(currentUser.name), n: currentUser.name, text });
     addMessage(msg);

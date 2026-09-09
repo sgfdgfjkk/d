@@ -683,20 +683,39 @@
 
 <!-- auth modal -->
 <div class="modal-backdrop" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-  <div class="modal">
+  <div class="modal auth-split">
     <button class="modal-close" id="authClose" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#x"/></svg></button>
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-tab="signin">Sign In</button>
-      <button class="auth-tab" data-tab="signup">Sign Up</button>
+    <div class="auth-brand">
+      <div class="auth-brand-orbs o1"></div>
+      <div class="auth-brand-orbs o2"></div>
+      <div class="auth-logo"><svg class="mini-flag" viewBox="0 0 24 24" width="26" height="26"><use href="#flag"/></svg>RBX<span>WIN</span></div>
+      <div class="auth-brand-art">
+        <img src="cases/case-gold.png" alt="" class="ab-case c1">
+        <img src="items/silver-star.png" alt="" class="ab-item i1">
+        <img src="cases/case-blue.png" alt="" class="ab-case c2">
+        <img src="items/dragon-wings.png" alt="" class="ab-item i2">
+        <svg class="ab-spark s1" viewBox="0 0 40 40"><use href="#spark"/></svg>
+        <svg class="ab-spark s2" viewBox="0 0 40 40"><use href="#spark"/></svg>
+      </div>
+      <div class="auth-brand-copy">
+        <h3>Win more. Get rewarded.</h3>
+        <p>Sign in to battle cases, hit gold spins and climb the leaderboard.</p>
+      </div>
     </div>
-    <h2 id="authTitle">Welcome back</h2>
-    <p class="muted" id="authHint">Sign in to pick up right where you left off.</p>
-    <label>Username</label>
-    <input type="text" id="authUser" placeholder="username" maxlength="16" autocomplete="off">
-    <label>Password</label>
-    <input type="password" id="authPass" placeholder="••••••••">
-    <div class="auth-error" id="authError"></div>
-    <button class="btn btn-primary btn-block" id="authSubmit">Sign In</button>
+    <div class="auth-form">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="signin">Sign In</button>
+        <button class="auth-tab" data-tab="signup">Sign Up</button>
+      </div>
+      <h2 id="authTitle">Welcome back</h2>
+      <p class="muted" id="authHint">Sign in to pick up right where you left off.</p>
+      <label>Username</label>
+      <input type="text" id="authUser" placeholder="username" maxlength="16" autocomplete="off">
+      <label>Password</label>
+      <input type="password" id="authPass" placeholder="••••••••">
+      <div class="auth-error" id="authError"></div>
+      <button class="btn btn-primary btn-block" id="authSubmit">Sign In</button>
+    </div>
   </div>
 </div>
 
@@ -832,6 +851,6 @@
   <div class="ft-bottom">RBXWIN is a fan-made project for personal use. Not affiliated with Roblox. Coins are play credits with no cash value.</div>
 </footer>
 
-<script src="script.js?v=135"></script>
+<script src="script.js?v=136"></script>
 </body>
 </html>

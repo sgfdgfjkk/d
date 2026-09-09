@@ -250,7 +250,7 @@ function loadSession() {
   // the server is the real source of truth for balance (so tips received while
   // you were away, or from another device, show up) — refresh once we can.
   if (name) {
-    Api.getUser(name).then((fresh) => {
+    Api.getUser(name).then(async (fresh) => {
       if (!currentUser || currentUser.name !== name) return;
       if (fresh) {
         if (fresh.balance !== currentUser.balance) {
@@ -259,11 +259,24 @@ function loadSession() {
           renderBalance(true);
         }
       } else {
-        // this browser was "logged in" locally but the server has no matching
-        // account (data file reset, different server, etc.) — every authenticated
-        // action would silently fail as "invalid credentials", so log out cleanly
-        // instead of leaving the UI stuck pretending you're signed in.
-        forceLogout("You were signed out — this browser's saved login no longer matches an account on the server. Please sign in or sign up again.");
+        // the server lost the account (data reset, different folder, etc.) —
+        // silently re-register with the locally saved password instead of
+        // kicking the user out. Only log out if that truly fails.
+        try {
+          const u = await Api.register(name, currentUser.pass);
+          currentUser.balance = u.balance;
+          cacheUserLocally();
+          renderBalance(true);
+        } catch (err) {
+          try {
+            const u2 = await Api.login(name, currentUser.pass);
+            currentUser.balance = u2.balance;
+            cacheUserLocally();
+            renderBalance(true);
+          } catch (e2) {
+            forceLogout('You were signed out — please sign in again.');
+          }
+        }
       }
     }).catch(() => {});
   }

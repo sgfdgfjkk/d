@@ -725,6 +725,7 @@ function openCreate() {
 }
 
 async function createBattle() {
+  if (!currentUser) { openAuth('signup'); toast('Create an account to host battles!'); return; }
   if (!selCases.length) { toast('Add at least one case!'); return; }
   const m = MODES[selMode];
   const cost = selCases.reduce((s, k) => s + CASE_TYPES[k].price, 0);
@@ -821,7 +822,16 @@ function openView(id) {
 
 /* ---------- router ---------- */
 function renderRoute() {
-  const h = location.hash || '#/home';
+  let h = location.hash || '#/home';
+  // create-battle requires an account — bounce logged-out visits (direct link,
+  // refresh, back/forward nav) back to the lobby instead of rendering a form
+  // that will throw when submitted with no currentUser.
+  if (h === '#/create-battle' && !currentUser) {
+    location.hash = '#/case-battles';
+    openAuth('signup');
+    toast('Create an account to host battles!');
+    h = '#/case-battles';
+  }
   const liveId = h.startsWith('#/battle/') ? Number(h.split('/')[2]) : null;
   $('#view-home').hidden = !h.startsWith('#/home');
   if (h.startsWith('#/home')) renderHomeHighlights();

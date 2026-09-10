@@ -655,13 +655,12 @@ function renderCbCases() {
     const tick = 30 + (hashString(k) % 55);
     return `
       <div class="ac-card${cnt ? ' selected' : ''}" data-key="${k}" style="--c:${caseAccent(k) || PAL_COLORS[pal]}">
-        <button class="ac-eye" type="button" title="Preview"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#eye"/></svg></button>
         ${cnt ? `<span class="cb-count">${cnt}</span>` : ''}
         <span class="ac-art">${caseArt(k, keys)}</span>
         <span class="a-name">${c.name}</span>
-        <span class="ac-price"><svg viewBox="0 0 24 24" width="12" height="12"><use href="#coin"/></svg> ${fmt(c.price)}</span>
-        <span class="ac-gauge"><i style="width:${tick}%"></i><em style="left:${tick}%"></em></span>
-        <button class="ac-addbtn${cnt ? ' on' : ''}" type="button">Add Case</button>
+        <span class="ac-price-row"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#coin"/></svg> ${fmt(c.price)}</span>
+        <span class="ac-gauge"><span class="ac-gauge-fill" style="width:${tick}%"></span></span>
+        <button class="ac-addbtn" type="button">Add Case</button>
       </div>`;
   }).join('') || `<div class="pv-empty">No cases match your search</div>`;
   $('#acCount').textContent = selCases.length;
@@ -683,14 +682,23 @@ function renderPv() {
   $('#pvTeams').innerHTML = teamsHtml;
 
   const keys = Object.keys(CASE_TYPES);
+  // one card per case type with a -/+ quantity control (no duplicate stacking)
+  const uniq = [...new Set(selCases)];
   $('#pvCases').innerHTML = `<button class="cbp-add" id="openAddCases"><span class="cbp-add-inner"><svg viewBox="0 0 24 24" width="12" height="12"><use href="#plus"/></svg> Add Cases</span></button>` +
-    (selCases.length
-      ? selCases.map((k) => `
-          <button class="cbp-round" data-k="${k}" title="Remove this round">
+    (uniq.length
+      ? uniq.map((k) => {
+          const cnt = selCases.filter((x) => x === k).length;
+          return `<div class="cbp-round" data-k="${k}" style="--c:${caseAccent(k) || '#4f9aff'}">
             ${caseArt(k, keys)}
             <span class="r-name">${CASE_TYPES[k].name}</span>
-            <span class="r-price"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg>${CASE_TYPES[k].price}</span>
-          </button>`).join('')
+            <span class="r-price"><svg viewBox="0 0 24 24" width="11" height="11"><use href="#coin"/></svg>${fmt(CASE_TYPES[k].price * cnt)}</span>
+            <div class="qty-row">
+              <button class="round-minus" data-minus="${k}" title="Remove one">−</button>
+              <span class="round-qty">${cnt}</span>
+              <button class="round-plus" data-plus="${k}" title="Add one" ${selCases.length >= 10 ? 'disabled' : ''}>+</button>
+            </div>
+          </div>`;
+        }).join('')
       : `<div class="cbp-empty-hint">Pick cases to build your battle</div>`);
   $('#pvRounds') && ($('#pvRounds').textContent = `${selCases.length} round${selCases.length === 1 ? '' : 's'}`);
 
@@ -1271,12 +1279,22 @@ async function initPage() {
   });
   $('#pvCases').addEventListener('click', (e) => {
     if (e.target.closest('.cbp-add')) { openCases(); return; }
-    const ch = e.target.closest('.cbp-round');
-    if (!ch) return;
-    const i = selCases.lastIndexOf(ch.dataset.k);
-    if (i > -1) selCases.splice(i, 1);
-    renderCbCases();
-    renderPv();
+    const minus = e.target.closest('[data-minus]');
+    if (minus) {
+      const i = selCases.lastIndexOf(minus.dataset.minus);
+      if (i > -1) selCases.splice(i, 1);
+      renderCbCases();
+      renderPv();
+      return;
+    }
+    const plus = e.target.closest('[data-plus]');
+    if (plus) {
+      if (selCases.length >= 10) { toast('Max 10 cases per battle'); return; }
+      selCases.push(plus.dataset.plus);
+      renderCbCases();
+      renderPv();
+      return;
+    }
   });
   $('#createGo').addEventListener('click', createBattle);
 
@@ -2335,22 +2353,26 @@ function renderLive(b) {
     const wonHtml = bags[i].map(miniItem).join('');
     const cycle = pool.slice();
     const off = Math.floor(rng() * cycle.length);
+    // 22 fill cards — more runway so the reel visibly rips through items
+    // at full speed before it starts to slow down
     let fill = '';
-    for (let j = 0; j < 16; j++) fill += miniItem(cycle[(j + off) % cycle.length]);
-    // a few extra cards after the landed item so the reel isn't blank below
-    // the marker once it settles
+    for (let j = 0; j < 22; j++) fill += miniItem(cycle[(j + off) % cycle.length]);
+    // tail cards keep the reel populated below the marker after landing
     let tail = '';
-    for (let j = 0; j < 3; j++) tail += miniItem(cycle[(j + off + 16) % cycle.length]);
+    for (let j = 0; j < 4; j++) tail += miniItem(cycle[(j + off + 22) % cycle.length]);
     strip.innerHTML = wonHtml + fill + miniItem(landItem) + tail;
     const winH = strip.parentElement.clientHeight;
-    // land the item centered on the marker line, not offset toward the bottom
-    const target = -((bags[i].length + 16) * ITEM_H) + (winH / 2 - ITEM_H / 2);
+    // center the landed item on the marker line
+    const target = -((bags[i].length + 22) * ITEM_H) + (winH / 2 - ITEM_H / 2);
     strip.style.transition = 'none';
     strip.style.transform = 'translateY(0px)';
     void strip.offsetWidth;
-    // one smooth continuous spin: fast start, gradual tick-down deceleration to the landed item
     if (!alive()) return;
-    strip.style.transition = 'transform ' + dur + 's cubic-bezier(.09,.79,.15,1)';
+    // cubic-bezier breakdown:
+    //   x1=.06 y1=.92  — nearly full speed instantly (aggressive launch)
+    //   x2=.12 y2=1.04 — tiny overshoot past the target then snaps back,
+    //                    giving the "bait" feeling before locking in
+    strip.style.transition = 'transform ' + dur + 's cubic-bezier(.06,.92,.12,1.04)';
     strip.style.transform = 'translateY(' + target + 'px)';
   };
   // watches the live transform of each spinning strip and flashes+ticks whichever
@@ -2405,22 +2427,28 @@ function renderLive(b) {
     const land = pickItem(allGood, rng);
     const strip = document.getElementById('pstrip' + gi);
     if (strip) {
+      // 22 fill cards — same runway as spinColumn/goldContinue
       let fill = '';
-      for (let j = 0; j < 16; j++) fill += miniItem(pickItem(allGood, rng));
-      // a few extra cards after the landed item so the reel doesn't look empty
-      // below the marker once it stops
+      for (let j = 0; j < 22; j++) fill += miniItem(pickItem(allGood, rng));
       let tail = '';
-      for (let j = 0; j < 3; j++) tail += miniItem(pickItem(allGood, rng));
+      for (let j = 0; j < 4; j++) tail += miniItem(pickItem(allGood, rng));
       strip.innerHTML = fill + miniItem(land) + tail;
       const winH = strip.parentElement.clientHeight;
       strip.style.transition = 'none';
       strip.style.transform = 'translateY(0px)';
       void strip.offsetWidth;
-      const target = -(16 * ITEM_H) + (winH / 2 - ITEM_H / 2);
-      strip.style.transition = 'transform 5.5s cubic-bezier(.1,.5,.14,1)';
+      const target = -(22 * ITEM_H) + (winH / 2 - ITEM_H / 2);
+      // same cinematic ease as goldContinue
+      strip.style.transition = 'transform 5.8s cubic-bezier(.05,.88,.10,1.03)';
       strip.style.transform = 'translateY(' + target + 'px)';
+      // flash the landed card once it settles
+      liveTimers.push(setTimeout(function () {
+        if (!alive()) return;
+        const landEl = strip.children[22];
+        if (landEl) { landEl.classList.remove('spin-land'); void landEl.offsetWidth; landEl.classList.add('spin-land'); }
+      }, 5840));
     }
-    attachCenterTicks([strip], 5.2);
+    attachCenterTicks([strip], 5.6);
     liveTimers.push(setTimeout(function () {
       if (!alive()) { done(); return; }
       AudioFX.gold();
@@ -2430,7 +2458,7 @@ function renderLive(b) {
       updateLivePot();
       if (alive()) toast((gp.you ? 'You' : gp.n) + ' unboxed ' + land.name + ' - ' + fmt(land.v) + '!');
       liveTimers.push(setTimeout(done, 1300));
-    }, 5650));
+    }, 6100));
   };
 
   // spins the jackpot wheel (the long strip of player segments in
@@ -2666,12 +2694,12 @@ function renderLive(b) {
           pending++;
           AudioFX.gold();
           var strip = document.getElementById('pstrip' + i);
-          // the reel is [won items] + [16 filler] + [landed item] + [3 tail
-          // filler] — the landed card is 4th from the end, NOT lastElementChild
+          // the reel is [won items] + [22 filler] + [landed item] + [4 tail
+          // filler] — the landed card is 5th from the end, NOT lastElementChild
           // (that was grabbing a tail filler card, which almost never had a
           // model-viewer on it, so the token spin silently no-op'd and jumped
           // straight to the good-item reel)
-          var landedCard = strip && strip.children[strip.children.length - 4];
+          var landedCard = strip && strip.children[strip.children.length - 5];
           if (landedCard) landedCard.classList.add('token-hit');
           var modelEl = landedCard && landedCard.querySelector('model-viewer');
           spinTokenModel(modelEl, 1.9, function () {
@@ -2739,20 +2767,31 @@ function renderLive(b) {
     var good = goodPool(b.cases[ri]).sort(function (a, b) { return b.v - a.v; });
     var prize = good[Math.floor(rng() * good.length)];
     var wonHtml = bags[i].slice(0, -1).map(miniItem).join('');
+    // 22 fill cards — matches spinColumn so the reel has equal runway
     var fill = '';
-    for (var j = 0; j < 16; j++) fill += miniItem(good[j % good.length]);
+    for (var j = 0; j < 22; j++) fill += miniItem(good[j % good.length]);
     var tail = '';
-    for (var j2 = 0; j2 < 3; j2++) tail += miniItem(good[(j2 + 16) % good.length]);
+    for (var j2 = 0; j2 < 4; j2++) tail += miniItem(good[(j2 + 22) % good.length]);
     strip.innerHTML = wonHtml + fill + miniItem(prize) + tail;
     strip.style.transition = 'none';
     strip.style.transform = 'translateY(0px)';
     void strip.offsetWidth;
     var winH = strip.parentElement.clientHeight;
-    var target = -((bags[i].length - 1 + 16) * ITEM_H) + (winH / 2 - ITEM_H / 2);
+    var target = -((bags[i].length - 1 + 22) * ITEM_H) + (winH / 2 - ITEM_H / 2);
     if (!alive()) { cb(); return; }
-    strip.style.transition = 'transform 4.4s cubic-bezier(.09,.79,.15,1)';
+    // gold spin gets a longer, slower, more cinematic ease —
+    // hits full speed fast, holds it, then decelerates smoothly into the
+    // prize with a gentle overshoot so it feels deliberate and weighty
+    strip.style.transition = 'transform 5.8s cubic-bezier(.05,.88,.10,1.03)';
     strip.style.transform = 'translateY(' + target + 'px)';
-    attachCenterTicks([strip], 4.4);
+    attachCenterTicks([strip], 5.6);
+    // flash the landed prize card once the spin settles
+    liveTimers.push(setTimeout(function () {
+      if (!alive()) return;
+      var landIdx = bags[i].length - 1 + 22;
+      var landEl = strip.children[landIdx];
+      if (landEl) { landEl.classList.remove('spin-land'); void landEl.offsetWidth; landEl.classList.add('spin-land'); }
+    }, 5840));
     liveTimers.push(setTimeout(function () {
       // the token itself already bumped totals[i] (and the live pot) by
       // it.v back in playRound when it landed — that token slot is being
@@ -2769,7 +2808,7 @@ function renderLive(b) {
       AudioFX.gold();
       spawnConfetti();
       cb();
-    }, 4750));
+    }, 6100));
   };
 
   // prefill the reels with cheap items so they never look empty, then start round 1

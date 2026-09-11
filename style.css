@@ -131,8 +131,10 @@ a{color:inherit;text-decoration:none}
   font-size:13.5px;font-weight:700;color:var(--muted);white-space:nowrap;
   transition:background var(--dur) var(--ease),color var(--dur),box-shadow var(--dur-slow) var(--ease),transform var(--dur) var(--ease)}
 .navrail-item .nr-ico{flex-shrink:0;color:#66799f;transition:color var(--dur),filter var(--dur);filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
-.navrail-item:hover{background:rgba(255,255,255,.045);color:var(--text)}
-.navrail-item:hover .nr-ico{color:#9fc0f2}
+.navrail-item:hover{background:rgba(255,255,255,.045);color:var(--text);
+  box-shadow:inset 0 0 0 1px rgba(120,170,255,.3),0 0 16px -2px rgba(90,160,255,.6);
+  transform:translateX(2px)}
+.navrail-item:hover .nr-ico{color:#9fc0f2;filter:drop-shadow(0 0 6px rgba(120,180,255,.7))}
 .navrail-item.active{color:var(--text);
   background:linear-gradient(180deg,rgba(47,128,255,.20),rgba(47,128,255,.08));
   box-shadow:inset 0 0 0 1.5px rgba(110,170,255,.55),0 0 18px rgba(47,128,255,.28),inset 0 1px 0 rgba(255,255,255,.12)}
@@ -432,6 +434,24 @@ a{color:inherit;text-decoration:none}
 
 /* add cases modal — BattleBlox style redesign */
 .modal.ac-modal{width:920px;max-width:96vw;padding:0;background:linear-gradient(180deg,#1a2744,#0f1a30);border-radius:20px}
+/* faint tiled RBXWIN watermark — same treatment as the home page, to give
+   this otherwise plain modal a little texture */
+.ac-modal::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.045;border-radius:20px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Ctext x='150' y='96' font-family='Arial, sans-serif' font-style='italic' font-weight='800' font-size='46' letter-spacing='2' fill='%23cfe0ff' text-anchor='middle' transform='rotate(-16 150 85)'%3ERBXWIN%3C/text%3E%3C/svg%3E");
+  background-size:300px 170px}
+/* animated light sweep across the whole top bar (title row + search/filter row) */
+.ac-modal::after{content:"";position:absolute;top:0;left:0;right:0;height:150px;z-index:5;pointer-events:none;
+  border-radius:20px 20px 0 0;
+  background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.12) 50%,transparent 60%);
+  background-size:300% 100%;background-position:160% 0;
+  animation:acTopSheen 5.5s ease-in-out infinite}
+@keyframes acTopSheen{0%{background-position:160% 0}50%{background-position:-60% 0}100%{background-position:-60% 0}}
+@media (prefers-reduced-motion: reduce){.ac-modal::after{animation:none}}
+/* shimmering underline under the "Add Cases" title, in sync with the sheen */
+.ac-modal .ac-head .cbp-underline{background:linear-gradient(90deg,#eef3ff,#4da3ff,#eef3ff);
+  background-size:220% 100%;animation:acUnderlineShimmer 2.6s linear infinite}
+@keyframes acUnderlineShimmer{0%{background-position:0% 0}100%{background-position:220% 0}}
+@media (prefers-reduced-motion: reduce){.ac-modal .ac-head .cbp-underline{animation:none}}
 .ac-head{display:flex;align-items:center;gap:14px;padding:24px 26px 12px}
 .ac-head .cbp-badge{width:46px;height:46px;background:linear-gradient(165deg,#2a4870,#1a2e50);border-radius:12px;box-shadow:0 0 0 1px rgba(90,150,255,.35),0 8px 20px rgba(0,0,0,.4)}
 .ac-head h2{font-size:20px;font-weight:800;letter-spacing:.4px;color:var(--text)}
@@ -2111,3 +2131,173 @@ body::after{
 .ac-head{display:flex;justify-content:flex-start;padding-right:8px}
 .ac-head .cbp-titlewrap{display:flex;flex-direction:column;align-items:flex-start}
 .ac-head .cbp-underline{align-self:flex-start}
+/* ===========================================================
+   Requested UI polish (v2) — kept intentionally faint
+   =========================================================== */
+
+/* 1) Glowing white aura behind the "Check Now" button */
+.dp-txt i{
+  box-shadow:0 6px 16px rgba(0,10,40,.4),0 0 18px 4px rgba(255,255,255,.55),0 0 36px 10px rgba(255,255,255,.28);
+  animation:checkNowGlow 2.2s ease-in-out infinite;
+}
+@keyframes checkNowGlow{
+  0%,100%{box-shadow:0 6px 16px rgba(0,10,40,.4),0 0 18px 4px rgba(255,255,255,.55),0 0 36px 10px rgba(255,255,255,.28);}
+  50%{box-shadow:0 6px 16px rgba(0,10,40,.4),0 0 26px 7px rgba(255,255,255,.8),0 0 50px 16px rgba(255,255,255,.4);}
+}
+@media (prefers-reduced-motion: reduce){.dp-txt i{animation:none}}
+
+/* 2) Faint glowing border on the outside of the Play Games tiles */
+.tile{
+  box-shadow:var(--shadow-rest),inset 0 0 0 1px rgba(255,255,255,.07),0 0 8px -3px rgba(90,160,255,.35);
+}
+.tile:hover{
+  box-shadow:0 18px 36px rgba(2,6,16,.55),0 0 28px rgba(47,128,255,.16),inset 0 0 0 1px rgba(255,255,255,.13),0 0 16px -2px rgba(90,160,255,.55);
+}
+
+/* 3) No outline on live "unboxed" feed cards — soft glow + firework sparks instead */
+.lf-card{
+  position:relative;
+  border:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 0 12px -2px var(--rc, rgba(140,170,255,.45));
+  transition:transform .2s,box-shadow .25s;
+}
+.lf-card:hover{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 0 18px -1px var(--rc, rgba(140,170,255,.65));
+}
+
+/* 7) Add Cases modal — pulsing color glow behind each case icon (tinted
+   with the case's own --c accent color), plus firework sparks that burst
+   out into the open space around the icon. Also tint each card's border
+   with its own case color for a bit more color across the grid. */
+.ac-art{position:relative;isolation:isolate;overflow:visible}
+.ac-art::before{
+  content:"";
+  position:absolute;
+  inset:-16px;
+  z-index:-1;
+  pointer-events:none;
+  border-radius:50%;
+  background:radial-gradient(closest-side, color-mix(in srgb, var(--c,#4da3ff) 65%, transparent), transparent 72%);
+  filter:blur(3px);
+  opacity:.55;
+  animation:acGlowPulse 2.6s ease-in-out infinite;
+}
+.ac-card:hover .ac-art::before{opacity:.85}
+@keyframes acGlowPulse{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:.75;transform:scale(1.08)}}
+@media (prefers-reduced-motion: reduce){
+  .ac-art::before{animation:none}
+}
+.ac-card{border-color:color-mix(in srgb, var(--c,#4da3ff) 28%, rgba(90,140,255,.12));
+  box-shadow:0 0 0 1px transparent,0 0 16px -8px color-mix(in srgb, var(--c,#4da3ff) 60%, transparent)}
+.ac-card:hover{border-color:color-mix(in srgb, var(--c,#4da3ff) 55%, rgba(90,140,255,.3));
+  box-shadow:0 0 0 1px transparent,0 0 22px -6px color-mix(in srgb, var(--c,#4da3ff) 75%, transparent)}
+
+/* fireworks bursting from the icon into the open space around it */
+.ac-fx{position:absolute;inset:0;pointer-events:none;z-index:-1}
+.ac-fx b{position:absolute;top:45%;left:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;
+  background:var(--c,#4da3ff);box-shadow:0 0 7px 1.5px var(--c,#4da3ff);opacity:0;
+  animation:acSpark 2.8s ease-out infinite;}
+.ac-fx b:nth-child(1){--dx:44px;--dy:-30px;animation-delay:0s}
+.ac-fx b:nth-child(2){--dx:52px;--dy:6px;animation-delay:.45s}
+.ac-fx b:nth-child(3){--dx:40px;--dy:34px;animation-delay:.9s}
+.ac-fx b:nth-child(4){--dx:-44px;--dy:-26px;animation-delay:1.35s}
+.ac-fx b:nth-child(5){--dx:-50px;--dy:10px;animation-delay:1.8s}
+.ac-fx b:nth-child(6){--dx:-38px;--dy:32px;animation-delay:2.25s}
+@keyframes acSpark{
+  0%{transform:translate(0,0) scale(.3);opacity:0}
+  18%{opacity:1;transform:translate(calc(var(--dx)*.35),calc(var(--dy)*.35)) scale(1)}
+  100%{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}
+}
+@media (prefers-reduced-motion: reduce){.ac-fx b{animation:none;opacity:0}}
+
+/* 4) Progress bar under the Coin Rain widget (replaces the old "Completes in…" text) */
+.rain-progress{
+  margin-top:10px;
+  height:6px;
+  border-radius:var(--r-pill);
+  background:rgba(255,255,255,.08);
+  overflow:hidden;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.35);
+}
+.rain-progress i{
+  display:block;
+  height:100%;
+  width:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#2f80ff,#8fd3ff);
+  box-shadow:0 0 8px rgba(77,163,255,.65);
+  transition:width 1s linear;
+}
+
+/* 5) Faint blue glow behind the Coin Rain box */
+.rain-widget{
+  box-shadow:inset 0 0 0 1px var(--edge),inset 0 1px 0 rgba(255,255,255,.05),0 8px 20px rgba(0,0,0,.35),0 0 16px 2px rgba(47,128,255,.14);
+}
+.rain-widget:hover{
+  box-shadow:inset 0 0 0 1px var(--edge-hover),0 10px 28px rgba(47,128,255,.2),0 0 20px 3px rgba(47,128,255,.22);
+}
+
+/* 6) Bold twinkle field + glow halo behind the 3D objects (Discord banner
+   model + Daily Cases model) — denser stars, brighter, plus a soft pulsing
+   glow so the model doesn't sit flat against the background */
+.ds-dominus,.dp-art{overflow:visible}
+.ds-dominus-model,#dpModel{position:relative;z-index:2}
+
+.dp-glow{
+  position:absolute;
+  inset:-34px;
+  z-index:0;
+  pointer-events:none;
+  border-radius:50%;
+  background:radial-gradient(closest-side, rgba(150,190,255,.4), rgba(120,170,255,.16) 55%, transparent 75%);
+  filter:blur(6px);
+  animation:dpGlowPulse 3.6s ease-in-out infinite;
+}
+@keyframes dpGlowPulse{0%,100%{opacity:.65;transform:scale(.94)}50%{opacity:1;transform:scale(1.08)}}
+@media (prefers-reduced-motion: reduce){.dp-glow{animation:none;opacity:.8}}
+
+.ds-dominus::before,.ds-dominus::after,
+.dp-art::before,.dp-art::after{
+  content:"";
+  position:absolute;
+  z-index:1;
+  pointer-events:none;
+  background-repeat:no-repeat;
+}
+.ds-dominus::before,.ds-dominus::after{inset:-72px -62px -40px -62px}
+.dp-art::before,.dp-art::after{inset:-56px -50px -36px -50px}
+.ds-dominus::before,.dp-art::before{
+  background-image:
+    radial-gradient(1.6px 1.6px at 8% 18%, #fff, transparent 65%),
+    radial-gradient(1.3px 1.3px at 12% 22%, #fff, transparent 65%),
+    radial-gradient(1.4px 1.4px at 26% 58%, #fff, transparent 65%),
+    radial-gradient(1.8px 1.8px at 44% 10%, #fff, transparent 65%),
+    radial-gradient(1.2px 1.2px at 60% 42%, #fff, transparent 65%),
+    radial-gradient(1.6px 1.6px at 80% 66%, #fff, transparent 65%),
+    radial-gradient(1.3px 1.3px at 88% 20%, #fff, transparent 65%),
+    radial-gradient(1.7px 1.7px at 16% 82%, #fff, transparent 65%),
+    radial-gradient(1.2px 1.2px at 54% 88%, #fff, transparent 65%),
+    radial-gradient(2px 2px at 94% 84%, #fff, transparent 65%),
+    radial-gradient(1.4px 1.4px at 4% 62%, #fff, transparent 65%),
+    radial-gradient(1.5px 1.5px at 70% 4%, #fff, transparent 65%);
+  opacity:.65;
+  animation:dominusStars1 3.4s ease-in-out infinite;
+}
+.ds-dominus::after,.dp-art::after{
+  background-image:
+    radial-gradient(1.3px 1.3px at 6% 45%, #cfe0ff, transparent 65%),
+    radial-gradient(1.5px 1.5px at 35% 30%, #cfe0ff, transparent 65%),
+    radial-gradient(1.3px 1.3px at 68% 14%, #cfe0ff, transparent 65%),
+    radial-gradient(1.7px 1.7px at 92% 52%, #cfe0ff, transparent 65%),
+    radial-gradient(1.3px 1.3px at 46% 74%, #cfe0ff, transparent 65%),
+    radial-gradient(1.3px 1.3px at 74% 90%, #cfe0ff, transparent 65%),
+    radial-gradient(1.6px 1.6px at 22% 6%, #cfe0ff, transparent 65%),
+    radial-gradient(1.2px 1.2px at 96% 30%, #cfe0ff, transparent 65%);
+  opacity:.5;
+  animation:dominusStars2 4.2s ease-in-out .8s infinite;
+}
+@keyframes dominusStars1{0%,100%{opacity:.4}50%{opacity:.8}}
+@keyframes dominusStars2{0%,100%{opacity:.28}50%{opacity:.6}}
+@media (prefers-reduced-motion: reduce){
+  .ds-dominus::before,.ds-dominus::after,.dp-art::before,.dp-art::after{animation:none}
+}

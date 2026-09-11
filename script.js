@@ -656,7 +656,7 @@ function renderCbCases() {
     return `
       <div class="ac-card${cnt ? ' selected' : ''}" data-key="${k}" style="--c:${caseAccent(k) || PAL_COLORS[pal]}">
         ${cnt ? `<span class="cb-count">${cnt}</span>` : ''}
-        <span class="ac-art">${caseArt(k, keys)}</span>
+        <span class="ac-art"><i class="ac-fx" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b></i>${caseArt(k, keys)}</span>
         <span class="a-name">${c.name}</span>
         <span class="ac-price-row"><svg viewBox="0 0 24 24" width="13" height="13"><use href="#coin"/></svg> ${fmt(c.price)}</span>
         <span class="ac-gauge"><span class="ac-gauge-fill" style="width:${tick}%"></span></span>
@@ -1134,11 +1134,18 @@ async function sendChat() {
 
 /* ---------- hourly rain ---------- */
 let rainSeconds = 60;
+const rainTotalSeconds = 60;
 let rainJoined = false;
+const updateRainProgress = () => {
+  const fill = $('#rainProgressFill');
+  if (fill) fill.style.width = Math.max(0, Math.min(100, (rainSeconds / rainTotalSeconds) * 100)) + '%';
+};
+updateRainProgress();
 setInterval(() => {
   rainSeconds -= 1;
   const t = $('#rainTimer');
   if (t) t.textContent = `${Math.floor(rainSeconds / 60)}:${String(rainSeconds % 60).padStart(2, '0')}`;
+  updateRainProgress();
   if (rainSeconds <= 0) {
     if (rainJoined && currentUser) {
       const win = 2 + Math.random() * 13;
@@ -1151,7 +1158,8 @@ setInterval(() => {
     const btn = $('#joinRainBtn');
     btn.classList.remove('joined');
     btn.textContent = 'Join Rain';
-    rainSeconds = 60;
+    rainSeconds = rainTotalSeconds;
+    updateRainProgress();
   }
 }, 1000);
 
@@ -1272,8 +1280,9 @@ async function initPage() {
     if (e.target.closest('.ac-eye')) { toast('Case preview coming soon!'); return; }
     const card = e.target.closest('.ac-card[data-key]');
     if (!card) return;
-    if (selCases.length >= 10) { toast('Max 10 cases per battle'); return; }
+    if (selCases.length >= 10) { toast('Max 10 cases per battle'); AudioFX.denied(); return; }
     selCases.push(card.dataset.key);
+    AudioFX.add();
     renderCbCases();
     renderPv();
   });
@@ -1282,15 +1291,16 @@ async function initPage() {
     const minus = e.target.closest('[data-minus]');
     if (minus) {
       const i = selCases.lastIndexOf(minus.dataset.minus);
-      if (i > -1) selCases.splice(i, 1);
+      if (i > -1) { selCases.splice(i, 1); AudioFX.remove(); }
       renderCbCases();
       renderPv();
       return;
     }
     const plus = e.target.closest('[data-plus]');
     if (plus) {
-      if (selCases.length >= 10) { toast('Max 10 cases per battle'); return; }
+      if (selCases.length >= 10) { toast('Max 10 cases per battle'); AudioFX.denied(); return; }
       selCases.push(plus.dataset.plus);
+      AudioFX.add();
       renderCbCases();
       renderPv();
       return;
@@ -1300,8 +1310,18 @@ async function initPage() {
 
   // add cases modal
   $('#casesClose').addEventListener('click', () => $('#casesModal').classList.remove('open'));
-  $('#acDone').addEventListener('click', () => $('#casesModal').classList.remove('open'));
+  $('#acDone').addEventListener('click', () => { AudioFX.confirm(); $('#casesModal').classList.remove('open'); });
   $('#casesModal').addEventListener('click', (e) => { if (e.target === $('#casesModal')) $('#casesModal').classList.remove('open'); });
+
+  // soft click feedback across the site's buttons / nav / tiles / tabs —
+  // case cards, confirm, and the +/- steppers already have their own more
+  // specific sounds above, so they're excluded here to avoid doubling up
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('button, .btn, .navrail-item, .tile, .cbp-dd-btn, .modal-close, .tab');
+    if (!el) return;
+    if (el.closest('.ac-card, #acDone, [data-plus], [data-minus]')) return;
+    AudioFX.click();
+  }, true);
 
   // view battle modal
   $('#viewClose').addEventListener('click', () => $('#viewModal').classList.remove('open'));
@@ -1333,13 +1353,22 @@ async function initPage() {
   const lfRow = document.getElementById('liveFeed');
   if (lfRow) {
     const lfUsers = ['trump', 'noko', 'blurple', 'milo', 'skinz', 'moonboi', 'kk_z', 'vex', 'zeph', 'runnerup'];
+    // rarity tiers by item value — drives the feed card's (faint) border/glow color
+    const lfRarityColor = (v) => {
+      if (v >= 30000) return '#ffd35c'; // mythical / gold
+      if (v >= 8000) return '#ff6bd6';  // legendary / pink
+      if (v >= 2000) return '#a86cff';  // epic / purple
+      return '#4da3ff';                 // rare / blue
+    };
     const lfRender = () => {
       const allItems = [];
       Object.keys(ITEM_POOLS).forEach((k) => ITEM_POOLS[k].forEach((it) => { if (!it.token && it.v >= 900) allItems.push(it); }));
       const it = allItems[Math.floor(Math.random() * allItems.length)];
       const user = lfUsers[Math.floor(Math.random() * lfUsers.length)];
+      const rc = lfRarityColor(it.v);
       const card = document.createElement('div');
       card.className = 'lf-card';
+      card.style.setProperty('--rc', rc);
       card.innerHTML = '<span class="lf-av"><img src="' + it.img + '" alt=""></span>' +
         '<span class="lf-info"><span class="lf-item">' + it.name + '</span>' +
         '<span class="lf-val"><svg viewBox="0 0 24 24"><use href="#coin"/></svg>' + fmt(it.v) + '</span>' +
@@ -1921,6 +1950,11 @@ const AudioFX = {
   win() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.blip(f, 0.12, 0.05), i * 90)); },
   gold() { this.blip(1568, 0.06, 0.04); this.blip(2093, 0.1, 0.04); },
   lose() { this.blip(200, 0.28, 0.05); },
+  click() { this.blip(1500 + Math.random() * 100, 0.018, 0.02); },
+  add() { this.blip(760, 0.03, 0.032); this.blip(1180, 0.045, 0.03); },
+  remove() { this.blip(480, 0.05, 0.028); },
+  confirm() { [660, 990].forEach((f, i) => setTimeout(() => this.blip(f, 0.08, 0.038), i * 70)); },
+  denied() { this.blip(160, 0.12, 0.04); },
 };
 
 /* ---------- viewer state ---------- */

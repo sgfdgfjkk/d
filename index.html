@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-<link rel="stylesheet" href="style.css?v=206">
+<link rel="stylesheet" href="style.css?v=205">
 </head>
 <body>
 
@@ -327,7 +327,7 @@
             camera-orbit="0deg 75deg 105%" field-of-view="28deg" interaction-prompt="none"
             disable-zoom shadow-intensity="0" exposure="1.1"></model-viewer>
         </div>
-        <a class="btn ds-btn" href="#"><img class="ds-btn-ico" src="img/discord-3d.png" alt="">Join Discord</a>
+        <a class="btn ds-btn" href="https://discord.gg/at55J7XtQB" target="_blank" rel="noopener noreferrer"><img class="ds-btn-ico" src="img/discord-3d.png" alt="">Join Discord</a>
         <img class="mascot ds-mascot" src="img/discord-3d.png" alt="Discord">
       </section>
 
@@ -349,6 +349,7 @@
             <i>Check Now</i>
           </div>
           <div class="dp-art">
+            <div class="dp-glow" aria-hidden="true"></div>
             <model-viewer id="dpModel" class="dp-model" src="models/gold-dominus-hat.glb" alt="Gold Dominus"
               auto-rotate auto-rotate-delay="0" rotation-per-second="220deg"
               camera-orbit="0deg 78deg 105%" field-of-view="28deg" interaction-prompt="none"
@@ -668,6 +669,7 @@
         <button class="icon-btn" title="Rain balance" aria-label="Rain balance info" id="rainInfoBtn"><svg viewBox="0 0 24 24" width="15" height="15"><use href="#coin"/></svg></button>
         <button class="btn btn-primary btn-sm" id="joinRainBtn">Join Rain</button>
       </div>
+      <div class="rain-progress" id="rainProgress"><i id="rainProgressFill"></i></div>
     </div>
 
     <div class="chat" id="chat"><!-- seeded by script.js --></div>
